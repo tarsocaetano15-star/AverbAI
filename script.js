@@ -1,55 +1,70 @@
 if ('serviceWorker' in navigator) {
-    navigator.serviceWorker.register('sw.js').then(() => console.log("SW Ativo"));
+    navigator.serviceWorker.register('sw.js');
 }
 
-let ships = [];
-let monitorInterval = null;
-let lastFreqExecutionTime = 0;
+let monitoredShips = [];
+let lastFreqCheck = Date.now();
+
+// Inicializa o motor de verificação global
+setInterval(engine, 1000);
 
 async function solicitarPermissao() {
     const p = await Notification.requestPermission();
-    atualizarStatus();
     if (p === "granted") {
-        new Notification("🚢 Monitor de Navios", { body: "Permissão concedida!" });
-    }
-}
-
-function atualizarStatus() {
-    const diag = document.getElementById('diag-text');
-    const btn = document.getElementById('btn-perm');
-    if (Notification.permission === "granted") {
-        diag.innerHTML = "✅ Notificações Ativadas.";
-        btn.style.display = "none";
+        document.getElementById('btn-perm').style.display = "none";
+        document.getElementById('diag-text').innerHTML = "✅ Notificações Ativas";
     }
 }
 
 function addShip() {
-    const nameInput = document.getElementById('ship-name');
-    const portInput = document.getElementById('ship-port');
-    if (!nameInput.value) return alert("Digite o nome.");
+    const name = document.getElementById('ship-name').value;
+    const port = document.getElementById('ship-port').value;
+    const time = document.getElementById('alarm-time').value;
 
-    const dataInclusao = new Date();
-    const dataAlarme = new Date();
-    dataAlarme.setDate(dataInclusao.getDate() + 6); // Lógica D+6
+    if (!name || !time) return alert("Preencha Nome e Horário");
 
-    ships.push({
+    const target = new Date();
+    target.setDate(target.getDate() + 6); // Regra D+6
+
+    const newShip = {
         id: Date.now(),
-        name: nameInput.value.toUpperCase(),
-        port: portInput.value || "Não especificado",
-        targetDate: dataAlarme.toDateString(),
-        displayDate: dataAlarme.toLocaleDateString()
-    });
+        name: name.toUpperCase(),
+        port: port || "Não informado",
+        alarmTime: time,
+        deadlineDate: target.toDateString(),
+        deadlineDisplay: target.toLocaleDateString('pt-BR'),
+        active: true
+    };
 
-    nameInput.value = ""; portInput.value = ""; renderList();
+    monitoredShips.push(newShip);
+    renderList();
+    showToast(`Monitoramento iniciado: ${newShip.name}`);
+    
+    document.getElementById('ship-name').value = "";
+    document.getElementById('ship-port').value = "";
 }
 
 function renderList() {
     const container = document.getElementById('list-container');
-    container.innerHTML = ships.map(s => `
-        <div class="ship-item">
-            <b>${s.name}</b> - ${s.port}
-            <span class="date-tag">🔔 Alerta em: ${s.displayDate}</span>
-        </div>`).join('');
+    container.innerHTML = monitoredShips.map(s => `
+        <div class="ship-card" id="card-${s.id}">
+            <div class="ship-info">
+                <b>NAVIO:</b> ${s.name} <br>
+                <b>PORTO:</b> ${s.port}
+                <span class="deadline-tag">📅 DEADLINE (D+6): ${s.deadlineDisplay} às ${s.alarmTime}</span>
+            </div>
+            <div class="btn-row">
+                <button class="btn-stop" onclick="removeShip(${s.id})">PARAR MONITORAMENTO</button>
+                <button class="btn-done" onclick="removeShip(${s.id}, true)">CONCLUIR</button>
+            </div>
+        </div>
+    `).join('');
+}
+
+function removeShip(id, isDone = false) {
+    monitoredShips = monitoredShips.filter(s => s.id !== id);
+    renderList();
+    showToast(isDone ? "Monitoramento Concluído!" : "Monitoramento Removido");
 }
 
 function setFreq(min, btn) {
@@ -58,74 +73,46 @@ function setFreq(min, btn) {
     btn.classList.add('on');
 }
 
-function startMonitor() {
-    if (ships.length === 0) return alert("Adicione navios.");
-    
-    document.getElementById('btn-start').innerText = "🟢 MONITORANDO...";
-    document.getElementById('btn-start').disabled = true;
-    document.getElementById('btn-stop').style.display = "block";
+// Motor de busca e alerta
+function engine() {
+    const agora = new Date();
+    const horaAtual = agora.getHours().toString().padStart(2, '0') + ":" + agora.getMinutes().toString().padStart(2, '0');
 
-    monitorInterval = setInterval(() => {
-        const agora = new Date();
-        const horaAtual = agora.getHours().toString().padStart(2, '0') + ":" + 
-                          agora.getMinutes().toString().padStart(2, '0');
-        const horaConfig = document.getElementById('alarm-time').value;
-
-        // Verifica cada navio individualmente (Lógica D+6 no horário marcado)
-        ships.forEach(s => {
-            if (agora.toDateString() === s.targetDate && horaAtual === horaConfig) {
-                if (!s.firedToday) {
-                    dispararAlerta("PRAZO D+6 ATINGIDO", s);
-                    s.firedToday = true; 
-                }
-            }
-        });
-
-        // Verificação por Frequência Geral
-        const freqMinutos = parseInt(document.getElementById('freq-val').value);
-        if (agora.getTime() - lastFreqExecutionTime >= freqMinutos * 60000) {
-            if (lastFreqExecutionTime !== 0) {
-                dispararAlertaNativa("VERIFICAÇÃO DE ROTINA", "O sistema continua monitorando seus prazos.");
-            }
-            lastFreqExecutionTime = agora.getTime();
+    // 1. Verificação de Alertas Individuais (D+6)
+    monitoredShips.forEach(s => {
+        if (s.active && agora.toDateString() === s.deadlineDate && horaAtual === s.alarmTime) {
+            enviarNotificacao(`⚠️ DEADLINE ATINGIDO`, `Navio: ${s.name} - Prazo D+6 encerrado.`);
+            s.active = false; // Desativa para não repetir no mesmo minuto
         }
-    }, 1000);
+    });
+
+    // 2. Verificação de Frequência do Sistema (Manter SW vivo)
+    const freqMin = parseInt(document.getElementById('freq-val').value);
+    if (agora.getTime() - lastFreqCheck >= freqMin * 60000) {
+        lastFreqCheck = agora.getTime();
+        if (monitoredShips.length > 0) {
+            enviarNotificacao("Monitor Ativo", `${monitoredShips.length} navio(s) em observação.`);
+        }
+    }
 }
 
-function stopMonitor() {
-    clearInterval(monitorInterval);
-    document.getElementById('btn-start').innerText = "▶ INICIAR MONITORAMENTO";
-    document.getElementById('btn-start').disabled = false;
-    document.getElementById('btn-stop').style.display = "none";
-}
-
-function dispararAlerta(tipo, navio) {
-    const titulo = `🚢 ${tipo}`;
-    const corpo = `Navio: ${navio.name}\nPorto: ${navio.port}\nPrazo de 6 dias concluído!`;
-    dispararAlertaNativa(titulo, corpo);
-}
-
-function dispararAlertaNativa(titulo, corpo) {
+function enviarNotificacao(titulo, corpo) {
     if (Notification.permission === 'granted') {
         navigator.serviceWorker.ready.then(reg => {
             reg.showNotification(titulo, {
                 body: corpo,
                 icon: "https://cdn-icons-png.flaticon.com/512/2040/2040061.png",
                 requireInteraction: true,
-                tag: 'ship-' + Date.now()
+                tag: 'ship-alert'
             });
         });
     }
-    showToast(titulo);
 }
 
 function showToast(msg) {
-    const container = document.getElementById('toasts');
     const t = document.createElement('div');
     t.className = 'toast';
-    t.innerHTML = `<b>${msg}</b>`;
-    container.appendChild(t);
-    setTimeout(() => t.remove(), 5000);
+    t.innerHTML = msg;
+    document.getElementById('toasts').appendChild(t);
+    setTimeout(() => t.remove(), 4000);
 }
-
-window.onload = atualizarStatus;
