@@ -1,18 +1,47 @@
-/**
- * SERVICE WORKER - MONITOR DE NAVIOS
- * Este script corre em segundo plano para enviar notificações.
- */
-self.addEventListener('message', (event) => {
-    if (event.data && event.data.type === 'ALERTA') {
-        const options = {
-            body: event.data.corpo,
-            icon: 'https://cdn-icons-png.flaticon.com/512/2040/2040061.png',
-            requireInteraction: true,
-            tag: 'ship-alert-' + Date.now()
-        };
-        self.registration.showNotification(event.data.titulo, options);
-    }
-});
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Monitor de Navios PRO</title>
+    <link rel="stylesheet" href="style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=DM+Sans:wght@400;500;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="wrapper">
+        <h1>🚢 MONITOR DE NAVIOS v3</h1>
 
-self.addEventListener('install', () => self.skipWaiting());
-self.addEventListener('activate', () => self.clients.claim());
+        <div class="card">
+            <div id="diag-text">Verificando permissões...</div>
+            <button id="btn-perm" onclick="solicitarPermissao()">🔔 Liberar Notificações no Sistema</button>
+        </div>
+
+        <div class="card">
+            <input type="text" id="ship-name" placeholder="Nome do Navio">
+            <input type="text" id="ship-port" placeholder="Porto">
+            <button onclick="addShip()">+ Adicionar Navio</button>
+            <div id="list-container"></div>
+        </div>
+
+        <div class="card">
+            <div class="label-accent">⏱️ Frequência de Verificação</div>
+            <div class="freq-grid">
+                <button class="fq-btn" onclick="setFreq(15)">15 min</button>
+                <button class="fq-btn" onclick="setFreq(60)">1 hora</button>
+                <button class="fq-btn" onclick="setFreq(1440)">24 horas</button>
+            </div>
+            <input type="range" id="freq-slider" min="1" max="1440" value="1440" oninput="updateSliderLabel(this.value)">
+            <div id="slider-label">Frequência: 1 vez ao dia</div>
+        </div>
+
+        <div class="card">
+            <div class="label-accent">⏰ Horário de Alarme Fixo</div>
+            <input type="time" id="alarm-time" value="09:00">
+            <button onclick="startMonitor()" id="btn-start">▶ INICIAR MONITORAMENTO</button>
+        </div>
+    </div>
+
+    <div id="toasts"></div>
+    <script src="script.js"></script>
+</body>
+</html>
