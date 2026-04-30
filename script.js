@@ -1,52 +1,43 @@
-// --- REGISTRO DO SERVICE WORKER ---
 if ('serviceWorker' in navigator) {
-    navigator.serviceWorker.register('sw.js').then(() => console.log("Service Worker Registrado"));
+    navigator.serviceWorker.register('sw.js').then(() => console.log("SW Ativo"));
 }
 
 let ships = [];
 let monitorInterval = null;
-let lastFixedAlarmDate = '';
 let lastFreqExecutionTime = 0;
 
-// --- 1. GESTÃO DE PERMISSÕES ---
 async function solicitarPermissao() {
-    if (!("Notification" in window)) {
-        alert("Este navegador não suporta notificações de desktop.");
-        return;
-    }
-
-    const permissao = await Notification.requestPermission();
-    
-    if (permissao === "granted") {
-        new Notification("🚢 Sistema Autorizado", {
-            body: "Agora os alertas aparecerão mesmo com o Excel aberto!",
-            icon: "https://cdn-icons-png.flaticon.com/512/2040/2040061.png"
-        });
-    }
+    const p = await Notification.requestPermission();
     atualizarStatus();
+    if (p === "granted") {
+        new Notification("🚢 Monitor de Navios", { body: "Permissão concedida!" });
+    }
 }
 
 function atualizarStatus() {
     const diag = document.getElementById('diag-text');
     const btn = document.getElementById('btn-perm');
     if (Notification.permission === "granted") {
-        diag.innerHTML = "✅ Notificações Ativadas no Sistema.";
+        diag.innerHTML = "✅ Notificações Ativadas.";
         btn.style.display = "none";
-    } else if (Notification.permission === "denied") {
-        diag.innerHTML = "❌ Notificações Bloqueadas no Navegador. Clique no cadeado da barra de endereço para desbloquear.";
     }
 }
 
-// --- 2. GESTÃO DE NAVIOS ---
 function addShip() {
     const nameInput = document.getElementById('ship-name');
     const portInput = document.getElementById('ship-port');
-    if (!nameInput.value) { alert("Por favor, digite o nome do navio."); return; }
+    if (!nameInput.value) return alert("Digite o nome.");
+
+    const dataInclusao = new Date();
+    const dataAlarme = new Date();
+    dataAlarme.setDate(dataInclusao.getDate() + 6); // Lógica D+6
 
     ships.push({
         id: Date.now(),
         name: nameInput.value.toUpperCase(),
-        port: portInput.value || "Não especificado"
+        port: portInput.value || "Não especificado",
+        targetDate: dataAlarme.toDateString(),
+        displayDate: dataAlarme.toLocaleDateString()
     });
 
     nameInput.value = ""; portInput.value = ""; renderList();
@@ -55,69 +46,86 @@ function addShip() {
 function renderList() {
     const container = document.getElementById('list-container');
     container.innerHTML = ships.map(s => `
-        <div style="background:var(--surface2); padding:10px; margin-top:5px; border-radius:8px; display:flex; justify-content:space-between;">
-            <span><b>${s.name}</b> - ${s.port}</span>
+        <div class="ship-item">
+            <b>${s.name}</b> - ${s.port}
+            <span class="date-tag">🔔 Alerta em: ${s.displayDate}</span>
         </div>`).join('');
 }
 
-function setFreq(val) {
-    document.getElementById('freq-slider').value = val;
-    updateSliderLabel(val);
+function setFreq(min, btn) {
+    document.getElementById('freq-val').value = min;
+    document.querySelectorAll('.fq-btn').forEach(b => b.classList.remove('on'));
+    btn.classList.add('on');
 }
 
-// --- 3. MOTOR DE MONITORAMENTO ---
 function startMonitor() {
-    if (ships.length === 0) { alert("Adicione pelo menos um navio."); return; }
-    if (Notification.permission !== "granted") { alert("Libere as notificações primeiro."); return; }
-
-    document.getElementById('btn-start').innerText = "🟢 MONITORANDO ATIVAMENTE";
-    document.getElementById('btn-start').style.background = "#10b981";
+    if (ships.length === 0) return alert("Adicione navios.");
+    
+    document.getElementById('btn-start').innerText = "🟢 MONITORANDO...";
+    document.getElementById('btn-start').disabled = true;
+    document.getElementById('btn-stop').style.display = "block";
 
     monitorInterval = setInterval(() => {
         const agora = new Date();
         const horaAtual = agora.getHours().toString().padStart(2, '0') + ":" + 
                           agora.getMinutes().toString().padStart(2, '0');
-        
-        const horaFixa = document.getElementById('alarm-time').value;
-        if (horaAtual === horaFixa && lastFixedAlarmDate !== agora.toDateString()) {
-            dispararAlerta("HORÁRIO AGENDADO");
-            lastFixedAlarmDate = agora.toDateString();
-        }
+        const horaConfig = document.getElementById('alarm-time').value;
 
-        const freqMinutos = parseInt(document.getElementById('freq-slider').value);
-        const agoraMs = agora.getTime();
-        if (agoraMs - lastFreqExecutionTime >= freqMinutos * 60000) {
-            if (lastFreqExecutionTime !== 0) dispararAlerta("VERIFICAÇÃO PERIÓDICA");
-            lastFreqExecutionTime = agoraMs;
+        // Verifica cada navio individualmente (Lógica D+6 no horário marcado)
+        ships.forEach(s => {
+            if (agora.toDateString() === s.targetDate && horaAtual === horaConfig) {
+                if (!s.firedToday) {
+                    dispararAlerta("PRAZO D+6 ATINGIDO", s);
+                    s.firedToday = true; 
+                }
+            }
+        });
+
+        // Verificação por Frequência Geral
+        const freqMinutos = parseInt(document.getElementById('freq-val').value);
+        if (agora.getTime() - lastFreqExecutionTime >= freqMinutos * 60000) {
+            if (lastFreqExecutionTime !== 0) {
+                dispararAlertaNativa("VERIFICAÇÃO DE ROTINA", "O sistema continua monitorando seus prazos.");
+            }
+            lastFreqExecutionTime = agora.getTime();
         }
     }, 1000);
 }
 
-// --- 4. DISPARO DO POP-UP ---
-function dispararAlerta(tipoContexto) {
-    ships.forEach(s => {
-        const n = new Notification(`🚢 ${tipoContexto}`, {
-            body: `NAVIO: ${s.name}\nPORTO: ${s.port}\nVerificado agora.`,
-            icon: "https://cdn-icons-png.flaticon.com/512/2040/2040061.png",
-            requireInteraction: true,
-            tag: s.id 
+function stopMonitor() {
+    clearInterval(monitorInterval);
+    document.getElementById('btn-start').innerText = "▶ INICIAR MONITORAMENTO";
+    document.getElementById('btn-start').disabled = false;
+    document.getElementById('btn-stop').style.display = "none";
+}
+
+function dispararAlerta(tipo, navio) {
+    const titulo = `🚢 ${tipo}`;
+    const corpo = `Navio: ${navio.name}\nPorto: ${navio.port}\nPrazo de 6 dias concluído!`;
+    dispararAlertaNativa(titulo, corpo);
+}
+
+function dispararAlertaNativa(titulo, corpo) {
+    if (Notification.permission === 'granted') {
+        navigator.serviceWorker.ready.then(reg => {
+            reg.showNotification(titulo, {
+                body: corpo,
+                icon: "https://cdn-icons-png.flaticon.com/512/2040/2040061.png",
+                requireInteraction: true,
+                tag: 'ship-' + Date.now()
+            });
         });
-        n.onclick = () => { window.focus(); n.close(); };
-    });
-    showToast(`Alerta disparado para ${ships.length} navios.`);
+    }
+    showToast(titulo);
 }
 
 function showToast(msg) {
     const container = document.getElementById('toasts');
     const t = document.createElement('div');
     t.className = 'toast';
-    t.innerHTML = `<b>Aviso:</b> ${msg}`;
+    t.innerHTML = `<b>${msg}</b>`;
     container.appendChild(t);
     setTimeout(() => t.remove(), 5000);
-}
-
-function updateSliderLabel(val) {
-    document.getElementById('slider-label').innerText = `Frequência: ${val} minutos`;
 }
 
 window.onload = atualizarStatus;
