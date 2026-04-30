@@ -1,148 +1,48 @@
-/* --- DOCUMENTAÇÃO: VARIÁVEIS DE CORES --- */
 :root {
-    --bg: #0a0f1e;           /* Fundo principal */
-    --surface: #111827;     /* Fundo dos cartões */
-    --surface2: #1a2236;    /* Fundo de inputs e botões secundários */
-    --accent: #00d4ff;      /* Azul Ciano (Néon) */
-    --accent2: #f59e0b;     /* Laranja (Alerta) */
-    --green: #10b981;       /* Verde (Sucesso) */
-    --text: #e2e8f0;        /* Cor do texto principal */
-    --muted: #64748b;       /* Cor do texto secundário */
-    --border: rgba(0, 212, 255, 0.1); /* Bordas suaves */
+    --bg: #0a0f1e; --surface: #111827; --surface2: #1a2236;
+    --accent: #00d4ff; --accent2: #f59e0b; --green: #10b981;
+    --red: #ef4444; --text: #e2e8f0; --muted: #64748b;
     --font-mono: 'Space Mono', monospace;
 }
 
-/* --- RESET BÁSICO --- */
-* {
-    box-sizing: border-box;
-    margin: 0;
-    padding: 0;
-}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { background: var(--bg); color: var(--text); font-family: 'DM Sans', sans-serif; padding: 2rem 1rem; }
 
-body {
-    background: var(--bg);
-    color: var(--text);
-    font-family: 'DM Sans', sans-serif;
-    line-height: 1.5;
-    padding: 20px;
-}
+.wrapper { max-width: 480px; margin: 0 auto; }
 
-.wrapper {
-    max-width: 480px;
-    margin: 0 auto;
-}
+header h1 { font-family: var(--font-mono); color: var(--accent); font-size: 20px; display: flex; align-items: center; gap: 10px; }
+.subtitle { font-size: 12px; color: var(--muted); margin-bottom: 20px; padding-left: 35px; }
 
-/* --- CABEÇALHO --- */
-header h1 {
-    font-family: var(--font-mono);
-    color: var(--accent);
-    font-size: 1.2rem;
-    text-transform: uppercase;
-    display: flex;
-    align-items: center;
-    gap: 10px;
-}
+.card { background: var(--surface); border: 1px solid rgba(255,255,255,0.05); border-radius: 12px; padding: 1.5rem; margin-bottom: 1rem; }
+.card-title { font-family: var(--font-mono); font-size: 11px; color: var(--accent); text-transform: uppercase; margin-bottom: 1rem; display: flex; align-items: center; gap: 8px; }
+.card-title::before { content: '●'; font-size: 8px; }
 
-.subtitle {
-    font-size: 0.8rem;
-    color: var(--muted);
-    margin-bottom: 25px;
-    padding-left: 32px;
-}
+.diag-box { border: 1px solid var(--accent2); border-radius: 8px; padding: 15px; background: rgba(245,158,11,0.02); margin-bottom: 10px; font-size: 13px; }
+.diag-row { display: flex; justify-content: space-between; margin-bottom: 8px; }
+.ok { color: var(--green); }
 
-/* --- CARTÕES (CARDS) --- */
-.card {
-    background: var(--surface);
-    border: 1px solid rgba(255, 255, 255, 0.05);
-    border-radius: 12px;
-    padding: 20px;
-    margin-bottom: 15px;
-}
+input, select, button { width: 100%; background: var(--surface2); border: 1px solid rgba(255,255,255,0.1); color: white; padding: 12px; border-radius: 8px; margin-bottom: 8px; font-size: 14px; }
+.row { display: flex; gap: 8px; }
 
-.card-title {
-    font-family: var(--font-mono);
-    font-size: 10px;
-    color: var(--accent);
-    text-transform: uppercase;
-    letter-spacing: 1px;
-    margin-bottom: 15px;
-    display: flex;
-    align-items: center;
-    gap: 8px;
-}
+button { background: var(--accent); color: var(--bg); font-weight: bold; border: none; cursor: pointer; transition: 0.2s; }
+button.outline { background: transparent; border: 1px solid var(--accent); color: var(--accent); }
+button.sec { background: var(--surface2); color: var(--muted); border: 1px solid var(--muted); }
+button:disabled { opacity: 0.3; cursor: not-allowed; }
 
-.card-title::before {
-    content: "●";
-    font-size: 8px;
-}
+.freq-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; }
+.fq { font-size: 10px; padding: 8px; border-radius: 6px; }
+.fq.on { border-color: var(--accent); color: var(--accent); background: rgba(0,212,255,0.1); }
 
-/* --- DIAGNÓSTICO (ESTILO image_efb7c0.png) --- */
-.diag-box {
-    border: 1px solid var(--accent2);
-    border-radius: 8px;
-    padding: 15px;
-    background: rgba(245, 158, 11, 0.02);
-    margin-bottom: 15px;
-}
+.countdown { font-family: var(--font-mono); font-size: 36px; color: var(--accent2); text-align: center; margin: 10px 0; }
+.cd-label { text-align: center; font-size: 10px; color: var(--muted); text-transform: uppercase; }
 
-.diag-row {
-    display: flex;
-    justify-content: space-between;
-    font-size: 13px;
-    margin-bottom: 10px;
-}
+.time-input { width: 120px; margin: 0 auto; display: block; text-align: center; font-family: var(--font-mono); }
 
-.diag-label { color: var(--muted); }
-.diag-val { font-family: var(--font-mono); font-weight: bold; }
+.status-bar { display: flex; align-items: center; gap: 10px; font-size: 12px; color: var(--muted); margin-bottom: 1rem; }
+.sdot { width: 8px; height: 8px; border-radius: 50%; background: #333; }
+.sdot.on { background: var(--green); box-shadow: 0 0 10px var(--green); }
 
-/* --- INPUTS E BOTÕES --- */
-input, select {
-    width: 100%;
-    background: var(--surface2);
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    border-radius: 8px;
-    padding: 12px;
-    color: white;
-    margin-bottom: 10px;
-    transition: border 0.3s;
-}
+.btn-group { display: flex; gap: 8px; }
 
-input:focus {
-    border-color: var(--accent);
-}
-
-.btn-primary {
-    background: var(--accent);
-    color: var(--bg);
-    border: none;
-    padding: 12px;
-    border-radius: 8px;
-    font-weight: bold;
-    cursor: pointer;
-    transition: opacity 0.2s;
-}
-
-.btn-secondary {
-    background: transparent;
-    border: 1px solid var(--accent);
-    color: var(--accent);
-    padding: 12px;
-    border-radius: 8px;
-    cursor: pointer;
-}
-
-/* --- COUNTDOWN --- */
-.countdown {
-    font-family: var(--font-mono);
-    font-size: 32px;
-    color: var(--accent2);
-    text-align: center;
-    margin: 15px 0;
-}
-
-/* --- HISTÓRICO --- */
-#history {
-    font-family: var(--font-mono);
-    font-size: 11px;
-    color: var(--muted);
-}
+#toasts { position: fixed; bottom: 20px; right: 20px; z-index: 999; }
+.toast { background: #1e293b; border-left: 4px solid var(--accent); padding: 12px; border-radius: 8px; margin-top: 10px; font-size: 12px; min-width: 200px; }
