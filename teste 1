@@ -1,118 +1,475 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Monitor de Navios</title>
-    <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=DM+Sans:wght@400;500;700&display=swap" rel="stylesheet">
-    <style>
-        :root {
-            --bg: #0a0f1e; --surface: #111827; --surface2: #1a2236;
-            --accent: #00d4ff; --accent2: #f59e0b; --green: #10b981;
-            --red: #ef4444; --text: #e2e8f0; --muted: #64748b;
-            --font-mono: 'Space Mono', monospace;
-        }
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Monitor de Navios</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet"/>
+<style>
+  :root {
+    --bg: #0a0f1e;
+    --surface: #111827;
+    --surface2: #1a2236;
+    --border: rgba(255,255,255,0.08);
+    --accent: #00d4ff;
+    --accent2: #f59e0b;
+    --green: #10b981;
+    --red: #ef4444;
+    --text: #e2e8f0;
+    --muted: #64748b;
+    --font-mono: 'Space Mono', monospace;
+    --font: 'DM Sans', sans-serif;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: var(--bg); color: var(--text); font-family: var(--font);
+    min-height: 100vh; padding: 2rem 1rem;
+    background-image: radial-gradient(ellipse at 20% 20%, rgba(0,212,255,0.06) 0%, transparent 60%),
+                      radial-gradient(ellipse at 80% 80%, rgba(245,158,11,0.05) 0%, transparent 60%);
+  }
+  .wrapper { max-width: 560px; margin: 0 auto; }
+  header { margin-bottom: 2rem; }
+  .header-top { display: flex; align-items: center; gap: 12px; margin-bottom: 4px; }
+  h1 { font-family: var(--font-mono); font-size: 20px; color: var(--accent); }
+  .subtitle { font-size: 13px; color: var(--muted); margin-left: 40px; }
+  .card { background: var(--surface); border: 1px solid var(--border); border-radius: 16px; padding: 1.25rem; margin-bottom: 1rem; }
+  .card-title { font-family: var(--font-mono); font-size: 11px; color: var(--accent); letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: 1rem; display: flex; align-items: center; gap: 8px; }
+  .card-title::before { content:''; display:block; width:6px; height:6px; border-radius:50%; background:var(--accent); }
+  .row { display: flex; gap: 8px; margin-bottom: 10px; }
+  .row:last-child { margin-bottom: 0; }
+  input[type="text"], input[type="time"], select {
+    background: var(--surface2); border: 1px solid var(--border); border-radius: 10px;
+    padding: 10px 14px; color: var(--text); font-family: var(--font); font-size: 14px;
+    outline: none; transition: border-color 0.2s; flex: 1;
+  }
+  input:focus, select:focus { border-color: var(--accent); }
+  input::placeholder { color: var(--muted); }
+  select option { background: var(--surface2); }
+  button {
+    background: var(--accent); color: #0a0f1e; border: none; border-radius: 10px;
+    padding: 10px 18px; font-family: var(--font); font-size: 14px; font-weight: 600;
+    cursor: pointer; transition: opacity 0.2s, transform 0.1s; white-space: nowrap;
+  }
+  button:hover { opacity: 0.85; }
+  button:active { transform: scale(0.97); }
+  button:disabled { opacity: 0.35; cursor: not-allowed; }
+  button.sec { background: var(--surface2); color: var(--text); border: 1px solid var(--border); }
+  button.sec:hover { border-color: var(--accent); color: var(--accent); }
+  button.outline { background: transparent; color: var(--accent); border: 1px solid var(--accent); }
+  button.outline:hover { background: rgba(0,212,255,0.08); }
+  button.full { width: 100%; margin-top: 8px; }
+  .ships-list { margin-top: 12px; display: flex; flex-direction: column; gap: 8px; }
+  .ship-tag { background: var(--surface2); border: 1px solid var(--border); border-radius: 10px; padding: 10px 14px; display: flex; align-items: center; justify-content: space-between; }
+  .ship-name { font-weight: 500; font-size: 14px; }
+  .ship-detail { font-size: 12px; color: var(--muted); margin-top: 2px; }
+  .btn-rm { background:none; border:none; color:var(--muted); cursor:pointer; font-size:18px; transition:color 0.2s; }
+  .btn-rm:hover { color: var(--red); }
+  .empty { font-size: 13px; color: var(--muted); text-align: center; padding: 1rem; }
+  .freq-grid { display: grid; grid-template-columns: repeat(4,1fr); gap: 6px; margin-bottom: 12px; }
+  .fq { background:var(--surface2); border:1px solid var(--border); color:var(--muted); font-size:12px; padding:8px 4px; border-radius:8px; cursor:pointer; transition:all 0.15s; font-family:var(--font); }
+  .fq:hover { border-color:var(--accent); color:var(--accent); }
+  .fq.on { background:rgba(0,212,255,0.12); border-color:var(--accent); color:var(--accent); font-weight:600; }
+  .slider-row { display:flex; align-items:center; gap:10px; }
+  input[type="range"] { flex:1; accent-color:var(--accent); cursor:pointer; }
+  .sval { font-family:var(--font-mono); font-size:13px; color:var(--accent); min-width:80px; text-align:right; }
+  .alarm-row { display:flex; align-items:center; gap:12px; margin-bottom:10px; }
+  .countdown { font-family:var(--font-mono); font-size:28px; color:var(--accent2); letter-spacing:4px; text-align:center; padding:8px 0; }
+  .cd-label { font-size:11px; color:var(--muted); text-align:center; letter-spacing:0.05em; text-transform:uppercase; }
+  .status-bar { display:flex; align-items:center; gap:10px; background:var(--surface); border:1px solid var(--border); border-radius:12px; padding:12px 16px; margin-bottom:1rem; font-size:13px; color:var(--muted); }
+  .sdot { width:8px; height:8px; border-radius:50%; background:var(--muted); flex-shrink:0; }
+  .sdot.on { background:var(--green); box-shadow:0 0 8px var(--green); animation:pulse 1.5s infinite; }
+  @keyframes pulse { 0%,100%{opacity:1;}50%{opacity:0.4;} }
+  .btn-row { display:flex; gap:8px; margin-bottom:1rem; }
+  .log { max-height:160px; overflow-y:auto; display:flex; flex-direction:column; gap:6px; }
+  .li { font-size:12px; color:var(--muted); display:flex; gap:8px; }
+  .lt { font-family:var(--font-mono); color:var(--accent); flex-shrink:0; }
+  .log::-webkit-scrollbar { width:4px; }
+  .log::-webkit-scrollbar-thumb { background:var(--border); border-radius:2px; }
 
-        * { box-sizing: border-box; margin: 0; padding: 0; }
-        body { 
-            background: var(--bg); color: var(--text); 
-            font-family: 'DM Sans', sans-serif; padding: 2rem 1rem;
-            background-image: radial-gradient(circle at top right, rgba(0,212,255,0.05), transparent);
-        }
+  /* DIAGNÓSTICO */
+  .diag { background:rgba(245,158,11,0.08); border:1px solid rgba(245,158,11,0.3); border-radius:12px; padding:1rem; margin-bottom:0; }
+  .diag-row { display:flex; align-items:center; justify-content:space-between; gap:8px; padding:6px 0; border-bottom:1px solid rgba(255,255,255,0.05); font-size:13px; }
+  .diag-row:last-child { border-bottom:none; }
+  .diag-label { color:var(--muted); }
+  .diag-val { font-family:var(--font-mono); font-size:12px; }
+  .ok { color:var(--green); }
+  .fail { color:var(--red); }
+  .warn { color:var(--accent2); }
 
-        .wrapper { max-width: 500px; margin: 0 auto; }
-        header { margin-bottom: 2rem; }
-        h1 { font-family: var(--font-mono); font-size: 20px; color: var(--accent); text-transform: uppercase; letter-spacing: 1px; }
-        .subtitle { font-size: 12px; color: var(--muted); margin-top: 4px; }
-
-        .card { 
-            background: var(--surface); border: 1px solid var(--border); 
-            border-radius: 12px; padding: 1.5rem; margin-bottom: 1.5rem;
-            border: 1px solid rgba(255,255,255,0.05);
-        }
-
-        .card-title { 
-            font-family: var(--font-mono); font-size: 11px; color: var(--accent); 
-            text-transform: uppercase; margin-bottom: 1rem; display: flex; align-items: center; gap: 8px;
-        }
-        .card-title::before { content: '●'; font-size: 8px; }
-
-        .diag-box { 
-            border: 1px solid var(--accent2); border-radius: 8px; padding: 12px; 
-            font-size: 12px; margin-bottom: 1rem; background: rgba(245,158,11,0.02);
-        }
-        .diag-row { display: flex; justify-content: space-between; margin-bottom: 8px; color: var(--muted); }
-        .val-ok { color: var(--green); font-family: var(--font-mono); }
-
-        input, select, button { 
-            width: 100%; background: var(--surface2); border: 1px solid rgba(255,255,255,0.1);
-            color: white; padding: 12px; border-radius: 8px; font-size: 14px; outline: none;
-        }
-        
-        .btn-primary { background: var(--accent); color: var(--bg); font-weight: bold; border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; }
-        .btn-outline { background: transparent; border: 1px solid var(--accent); color: var(--accent); }
-        
-        .grid-freq { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-bottom: 10px; }
-        .grid-freq button { padding: 8px; font-size: 11px; color: var(--muted); }
-        .grid-freq button.active { border-color: var(--accent); color: var(--accent); background: rgba(0,212,255,0.1); }
-
-        .countdown { font-family: var(--font-mono); font-size: 32px; color: var(--accent2); text-align: center; margin: 15px 0; }
-        .cd-label { text-align: center; font-size: 10px; color: var(--muted); text-transform: uppercase; }
-
-        #toasts { position: fixed; bottom: 20px; right: 20px; }
-    </style>
+  /* TOAST — posição fixed, fora do fluxo da página */
+  #toasts {
+    position: fixed;
+    bottom: 32px;
+    right: 32px;
+    z-index: 99999;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    pointer-events: none;
+    width: 320px;
+  }
+  .toast {
+    background: #1e293b;
+    border: 1px solid rgba(0,212,255,0.4);
+    border-left: 4px solid var(--accent);
+    border-radius: 12px;
+    padding: 14px 16px;
+    box-shadow: 0 8px 40px rgba(0,0,0,0.6);
+    pointer-events: all;
+    display: flex;
+    gap: 12px;
+    align-items: flex-start;
+    opacity: 0;
+    transform: translateX(40px);
+    transition: opacity 0.25s ease, transform 0.25s ease;
+  }
+  .toast.visible { opacity: 1; transform: translateX(0); }
+  .toast-ico { font-size: 22px; flex-shrink: 0; line-height: 1.2; }
+  .toast-body { flex: 1; min-width: 0; }
+  .toast-title { font-size: 14px; font-weight: 600; color: #f1f5f9; margin-bottom: 3px; }
+  .toast-msg { font-size: 12px; color: #94a3b8; line-height: 1.5; word-break: break-word; }
+  .toast-x { background:none; border:none; color:#475569; cursor:pointer; font-size:18px; padding:0; line-height:1; flex-shrink:0; }
+  .toast-x:hover { color:#f1f5f9; }
+</style>
 </head>
 <body>
-    <div class="wrapper">
-        <header>
-            <h1>🚢 Monitor de Navios</h1>
-            <div class="subtitle">Alertas de saída portuária</div>
-        </header>
 
-        <section class="card">
-            <div class="card-title">Diagnóstico do sistema</div>
-            <div class="diag-box">
-                <div class="diag-row"><span>Notification API</span><span class="val-ok" id="d-api">Suportada</span></div>
-                <div class="diag-row"><span>Permissão atual</span><span class="val-ok" style="color:var(--accent2)" id="d-perm">Aguardando</span></div>
-            </div>
-            <div style="display:flex; gap:10px;">
-                <button class="btn-primary" onclick="solicitarPermissao()">🔔 Solicitar permissão</button>
-                <button class="btn-outline" onclick="testarNotificacao()">🧪 Testar agora</button>
-            </div>
-        </section>
+<!-- Container de toasts FORA do wrapper, fixed na tela -->
+<div id="toasts"></div>
 
-        <section class="card">
-            <div class="card-title">Navios monitorados</div>
-            <input type="text" id="ship-name" placeholder="Nome do navio (ex: MSC OSCAR)" style="margin-bottom:10px;">
-            <div style="display:flex; gap:10px; margin-bottom:10px;">
-                <select id="port-type" style="flex:1;"><option>Porto de origem</option></select>
-                <input type="text" id="ship-port" placeholder="Nome do porto" style="flex:1;">
-            </div>
-            <button class="btn-primary" onclick="addShip()">+ Adicionar navio</button>
-        </section>
+<div class="wrapper">
+  <header>
+    <div class="header-top"><span style="font-size:28px">🚢</span><h1>MONITOR DE NAVIOS</h1></div>
+    <div class="subtitle">Alertas de saída portuária</div>
+  </header>
 
-        <section class="card">
-            <div class="card-title">Frequência de verificação</div>
-            <div class="grid-freq">
-                <button>1 min</button><button>10 min</button><button class="active">30 min</button><button>1 hora</button>
-                <button>6 horas</button><button>12 horas</button><button style="grid-column: span 2;">1x ao dia</button>
-            </div>
-            <input type="range" min="1" max="1440" value="1440">
-        </section>
-
-        <section class="card">
-            <div class="card-title">Alarme Diário</div>
-            <input type="time" id="alarm-time" value="09:00" style="width:auto; display:block; margin: 0 auto;">
-            <div class="countdown" id="cd">21:30:07</div>
-            <div class="cd-label">Próximo disparo</div>
-        </section>
-
-        <div style="display:flex; gap:10px;">
-            <button class="btn-primary" id="btn-start" onclick="startMonitor()">▶ Iniciar</button>
-            <button class="btn-outline" style="border-color:var(--muted); color:var(--muted)">■ Parar</button>
-            <button class="btn-outline">🔔 Testar</button>
-        </div>
+  <!-- DIAGNÓSTICO -->
+  <div class="card">
+    <div class="card-title">Diagnóstico do sistema</div>
+    <div class="diag" id="diag">
+      <div class="diag-row"><span class="diag-label">Notification API</span><span class="diag-val" id="d-api">—</span></div>
+      <div class="diag-row"><span class="diag-label">Permissão atual</span><span class="diag-val" id="d-perm">—</span></div>
+      <div class="diag-row"><span class="diag-label">Toast na tela</span><span class="diag-val" id="d-toast">—</span></div>
     </div>
-    <script src="script.js"></script>
+    <div style="display:flex;gap:8px;margin-top:10px;">
+      <button onclick="solicitarPermissao()" id="btn-perm" style="flex:1;">🔔 Solicitar permissão</button>
+      <button onclick="testarTudo()" class="outline" style="flex:1;">🧪 Testar tudo agora</button>
+    </div>
+  </div>
+
+  <!-- Navios -->
+  <div class="card">
+    <div class="card-title">Navios monitorados</div>
+    <div class="row"><input type="text" id="ship-name" placeholder="Nome do navio (ex: MSC OSCAR)" /></div>
+    <div class="row">
+      <select id="ship-port-type">
+        <option value="origin">Porto de origem</option>
+        <option value="dest">Porto de destino</option>
+        <option value="any">Qualquer porto</option>
+      </select>
+      <input type="text" id="ship-port" placeholder="Nome do porto (ex: Santos)" />
+    </div>
+    <button onclick="addShip()" class="full">+ Adicionar navio</button>
+    <div class="ships-list" id="ships-list"><div class="empty">Nenhum navio adicionado ainda.</div></div>
+  </div>
+
+  <!-- Frequência -->
+  <div class="card">
+    <div class="card-title">Frequência de verificação</div>
+    <div class="freq-grid">
+      <button class="fq" onclick="setP(1,'min',this)">1 min</button>
+      <button class="fq" onclick="setP(10,'min',this)">10 min</button>
+      <button class="fq" onclick="setP(30,'min',this)">30 min</button>
+      <button class="fq" onclick="setP(1,'hr',this)">1 hora</button>
+      <button class="fq" onclick="setP(6,'hr',this)">6 horas</button>
+      <button class="fq" onclick="setP(12,'hr',this)">12 horas</button>
+      <button class="fq on" onclick="setP(1,'day',this)" style="grid-column:span 2">1× ao dia</button>
+    </div>
+    <div class="slider-row">
+      <span style="font-size:12px;color:var(--muted)">Personalizar:</span>
+      <input type="range" min="1" max="1440" value="1440" id="interval" oninput="onSlider(this.value)"/>
+      <span class="sval" id="sval">1× ao dia</span>
+    </div>
+  </div>
+
+  <!-- Alarme -->
+  <div class="card">
+    <div class="card-title">Alarme diário</div>
+    <div class="alarm-row">
+      <label style="font-size:13px;color:var(--muted)">Horário:</label>
+      <input type="time" id="alarm-time" value="09:00" style="max-width:140px" onchange="alarmFiredToday=false;updateCD()"/>
+    </div>
+    <div class="countdown" id="cd">--:--:--</div>
+    <div class="cd-label">próximo disparo</div>
+  </div>
+
+  <!-- Status -->
+  <div class="status-bar">
+    <div class="sdot" id="sdot"></div>
+    <span id="stxt">Monitoramento inativo.</span>
+  </div>
+  <div class="btn-row">
+    <button onclick="startMonitor()" id="btn-start" style="flex:1">▶ Iniciar</button>
+    <button onclick="stopMonitor()" id="btn-stop" class="sec" style="flex:1" disabled>⏹ Parar</button>
+    <button onclick="simAlert()" class="outline" style="flex:1">🔔 Testar</button>
+  </div>
+
+  <!-- Log -->
+  <div class="card">
+    <div class="card-title">Histórico</div>
+    <div class="log" id="log"><div class="li"><span class="lt">--:--:--</span><span>Aguardando...</span></div></div>
+  </div>
+</div>
+
+<script>
+  // --- VARIÁVEIS GLOBAIS ---
+  let ships = [], alarmInt = null, alarmFiredToday = false, lastAlarmDate = '';
+  let curMin = 1440;
+
+  // ── DIAGNÓSTICO ──────────────────────────────────────────
+  /**
+   * DOCUMENTAÇÃO: Função de Diagnóstico.
+   * Verifica se o navegador permite enviar alertas para fora da janela.
+   */
+  function runDiag() {
+    const apiSuportada = 'Notification' in window;
+    const campoApi = document.getElementById('d-api');
+    const campoPerm = document.getElementById('d-perm');
+
+    campoApi.textContent = apiSuportada ? '✅ Suportada' : '❌ Não suportada';
+    campoApi.className = 'diag-val ' + (apiSuportada ? 'ok' : 'fail');
+
+    if (apiSuportada) {
+      const permissao = Notification.permission;
+      campoPerm.textContent = permissao === 'granted' ? '✅ Permitida (Vai aparecer no Windows)' :
+                              permissao === 'denied'  ? '❌ Bloqueada (Altere no cadeado do navegador)' :
+                              '⚠️ Aguardando autorização';
+      campoPerm.className = 'diag-val ' + (permissao === 'granted' ? 'ok' : permissao === 'denied' ? 'fail' : 'warn');
+      if (permissao === 'granted') document.getElementById('btn-perm').style.display = 'none';
+    }
+
+    document.getElementById('d-toast').textContent = '✅ disponível (JS puro)';
+    document.getElementById('d-toast').className = 'diag-val ok';
+  }
+
+  // ── SOLICITAÇÃO DE PERMISSÃO ─────────────────────────────
+  /**
+   * DOCUMENTAÇÃO: Solicitação de Permissão.
+   * Abre a janelinha do navegador perguntando se permite notificações.
+   */
+  async function solicitarPermissao() {
+    if (!('Notification' in window)) {
+      alert("Este navegador não suporta notificações de área de trabalho.");
+      return;
+    }
+    const resposta = await Notification.requestPermission();
+    addLog('Permissão: ' + resposta);
+    runDiag();
+    if (resposta === 'granted') {
+      showToast("✅ Sucesso!", "Agora as notificações aparecerão sobre outros programas.");
+    }
+  }
+
+  // ── TESTAR TUDO ──────────────────────────────────────────
+  function testarTudo() {
+    showToast('🚢 Teste — Monitor de Navios', 'Toast funcionando! ' + new Date().toLocaleTimeString('pt-BR'));
+    addLog('Toast de teste disparado.');
+    if ('Notification' in window && Notification.permission === 'granted') {
+      dispararNotificacaoSistema('🚢 Monitor de Navios — Teste', 'Notificação do sistema funcionando! ' + new Date().toLocaleTimeString('pt-BR'));
+      addLog('Notificação do sistema disparada.');
+    } else {
+      addLog('⚠️ Notif. sistema: clique em "Solicitar permissão" primeiro.');
+    }
+    runDiag();
+  }
+
+  // ── TOAST ────────────────────────────────────────────────
+  function showToast(title, msg) {
+    const c = document.getElementById('toasts');
+    const t = document.createElement('div');
+    t.className = 'toast';
+    t.innerHTML = `
+      <div class="toast-ico">🚢</div>
+      <div class="toast-body">
+        <div class="toast-title">${title}</div>
+        <div class="toast-msg">${msg}</div>
+      </div>
+      <button class="toast-x" onclick="killToast(this.parentElement)">×</button>`;
+    c.appendChild(t);
+    t.getBoundingClientRect(); // força reflow para animação funcionar
+    t.classList.add('visible');
+    setTimeout(() => killToast(t), 9000);
+  }
+
+  function killToast(el) {
+    if (!el || !el.parentElement) return;
+    el.classList.remove('visible');
+    setTimeout(() => el && el.parentElement && el.parentElement.removeChild(el), 300);
+  }
+
+  // ── NOTIFICAÇÃO DO SISTEMA ───────────────────────────────
+  /**
+   * DOCUMENTAÇÃO: Disparo do Alerta Nativo.
+   * Esta é a função que faz a ponte entre o site e a barra de ferramentas do sistema.
+   */
+  function dispararNotificacaoSistema(titulo, mensagem) {
+    if (Notification.permission === 'granted') {
+      new Notification(titulo, {
+        body: mensagem,
+        icon: 'https://cdn-icons-png.flaticon.com/512/2040/2040061.png',
+        silent: false
+      });
+    }
+  }
+
+  // ── COUNTDOWN ────────────────────────────────────────────
+  function updateCD() {
+    const [h,m] = (document.getElementById('alarm-time').value||'09:00').split(':').map(Number);
+    const now = new Date(), tgt = new Date();
+    tgt.setHours(h,m,0,0);
+    if (tgt<=now) tgt.setDate(tgt.getDate()+1);
+    const d=tgt-now, hh=Math.floor(d/3600000), mm=Math.floor((d%3600000)/60000), ss=Math.floor((d%60000)/1000);
+    document.getElementById('cd').textContent = pad(hh)+':'+pad(mm)+':'+pad(ss);
+  }
+  function pad(n){return String(n).padStart(2,'0');}
+
+  // ── ALARM CHECK ──────────────────────────────────────────
+  /**
+   * DOCUMENTAÇÃO: Verificação do Alarme Diário.
+   * Checa a cada segundo se o horário chegou.
+   */
+  function checkAlarm() {
+    const horarioDefinido = document.getElementById('alarm-time').value || '09:00';
+    const [horaAlarme, minAlarme] = horarioDefinido.split(':').map(Number);
+
+    const agora = new Date();
+    const dataHojeString = agora.toDateString();
+
+    // Se a hora e o minuto forem iguais ao configurado
+    if (agora.getHours() === horaAlarme && agora.getMinutes() === minAlarme) {
+
+      // Verifica se já não disparou neste minuto (evita repetição)
+      if (!alarmFiredToday || lastAlarmDate !== dataHojeString) {
+        alarmFiredToday = true;
+        lastAlarmDate = dataHojeString;
+
+        if (ships.length > 0) {
+          ships.forEach(navio => {
+            const infoPorto = navio.port ? portLbl(navio.pt) + ': ' + navio.port : 'Sem porto definido';
+
+            // 1. Aparece dentro do site (Toast)
+            showToast(`🚢 ${navio.name}`, infoPorto);
+
+            // 2. Aparece na Barra de Ferramentas / Windows (Nativo)
+            dispararNotificacaoSistema(`Monitor: ${navio.name}`, infoPorto);
+          });
+          addLog('Alarme disparado para ' + ships.length + ' navio(s).');
+        } else {
+          dispararNotificacaoSistema("Alarme de Verificação", "O horário chegou, mas não há navios na lista.");
+          showToast("⏰ Alarme de Verificação", "O horário chegou, mas não há navios na lista.");
+          addLog('Alarme disparado — sem navios na lista.');
+        }
+      }
+    } else {
+      // Quando o minuto passa, reseta o gatilho para o dia seguinte
+      if (agora.toDateString() !== lastAlarmDate) {
+        alarmFiredToday = false;
+      }
+    }
+  }
+
+  // ── NAVIOS ───────────────────────────────────────────────
+  function portLbl(t){return t==='origin'?'Origem':t==='dest'?'Destino':'Porto';}
+
+  function addShip() {
+    const name=document.getElementById('ship-name').value.trim();
+    const pt=document.getElementById('ship-port-type').value;
+    const port=document.getElementById('ship-port').value.trim();
+    if (!name){alert('Informe o nome do navio.');return;}
+    ships.push({name,pt,port,id:Date.now()});
+    document.getElementById('ship-name').value='';
+    document.getElementById('ship-port').value='';
+    renderList();
+    addLog('Adicionado: '+name+(port?' ('+portLbl(pt)+': '+port+')':''));
+  }
+
+  function removeShip(id) {
+    const s=ships.find(x=>x.id===id);
+    ships=ships.filter(x=>x.id!==id);
+    if(s)addLog('Removido: '+s.name);
+    renderList();
+  }
+
+  function renderList() {
+    const el=document.getElementById('ships-list');
+    if(!ships.length){el.innerHTML='<div class="empty">Nenhum navio adicionado ainda.</div>';return;}
+    el.innerHTML=ships.map(s=>`
+      <div class="ship-tag">
+        <div><div class="ship-name">${s.name}</div>${s.port?`<div class="ship-detail">${portLbl(s.pt)}: ${s.port}</div>`:''}</div>
+        <button class="btn-rm" onclick="removeShip(${s.id})">×</button>
+      </div>`).join('');
+  }
+
+  // ── FREQUÊNCIA ───────────────────────────────────────────
+  function fmtMin(m){
+    if(m===1)return'1 min';if(m<60)return m+' min';if(m===60)return'1 hora';
+    if(m<1440&&m%60===0)return(m/60)+' horas';if(m<1440)return(Math.round(m/60*10)/10)+' horas';
+    if(m===1440)return'1× ao dia';return(Math.round(m/1440*10)/10)+' dias';
+  }
+  function setP(v,u,btn){
+    let m=v; if(u==='hr')m=v*60; if(u==='day')m=v*1440;
+    curMin=m; document.getElementById('interval').value=m; document.getElementById('sval').textContent=fmtMin(m);
+    document.querySelectorAll('.fq').forEach(b=>b.classList.remove('on')); btn.classList.add('on');
+  }
+  function onSlider(v){
+    curMin=parseInt(v); document.getElementById('sval').textContent=fmtMin(curMin);
+    document.querySelectorAll('.fq').forEach(b=>b.classList.remove('on'));
+  }
+
+  // ── LOG ──────────────────────────────────────────────────
+  function addLog(msg) {
+    const log=document.getElementById('log');
+    const now=new Date().toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit',second:'2-digit'});
+    const item=document.createElement('div'); item.className='li';
+    item.innerHTML=`<span class="lt">${now}</span><span>${msg}</span>`;
+    if(log.children.length===1&&log.children[0].querySelector('.lt')?.textContent==='--:--:--')log.innerHTML='';
+    log.insertBefore(item,log.firstChild);
+    if(log.children.length>60)log.removeChild(log.lastChild);
+  }
+
+  // ── MONITOR ──────────────────────────────────────────────
+  async function startMonitor() {
+    if(!ships.length){alert('Adicione ao menos um navio.');return;}
+    if('Notification' in window && Notification.permission==='default') await solicitarPermissao();
+    document.getElementById('sdot').className='sdot on';
+    document.getElementById('stxt').textContent='Monitoramento ATIVO. Pode minimizar o navegador.';
+    document.getElementById('btn-start').disabled=true;
+    document.getElementById('btn-stop').disabled=false;
+    alarmFiredToday=false;
+    alarmInt=setInterval(()=>{checkAlarm();updateCD();},1000);
+    addLog('Monitoramento iniciado.');
+    runDiag();
+  }
+
+  function stopMonitor() {
+    clearInterval(alarmInt); alarmInt=null;
+    document.getElementById('sdot').className='sdot';
+    document.getElementById('stxt').textContent='Monitoramento pausado.';
+    document.getElementById('btn-start').disabled=false;
+    document.getElementById('btn-stop').disabled=true;
+    addLog('Monitoramento pausado.');
+  }
+
+  function simAlert() {
+    const name=ships.length?ships[Math.floor(Math.random()*ships.length)].name:'MSC OSCAR (teste)';
+    const port=ships.length&&ships[0].port?portLbl(ships[0].pt)+': '+ships[0].port:'Destino: Santos';
+    showToast('🚢 Navio detectado: '+name, port+' — '+new Date().toLocaleTimeString('pt-BR'));
+    dispararNotificacaoSistema('Monitor: '+name, port);
+    addLog('Simulação: '+name);
+  }
+
+  // ── INIT ─────────────────────────────────────────────────
+  window.addEventListener('load', () => { runDiag(); updateCD(); setInterval(updateCD,1000); });
+</script>
 </body>
 </html>
