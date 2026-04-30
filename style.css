@@ -1,15 +1,148 @@
+/* --- DOCUMENTAÇÃO: VARIÁVEIS DE CORES --- */
 :root {
-    --bg: #0a0f1e; --surface: #111827; --surface2: #1a2236;
-    --accent: #00d4ff; --text: #e2e8f0; --muted: #64748b; --border: rgba(255,255,255,0.08);
+    --bg: #0a0f1e;           /* Fundo principal */
+    --surface: #111827;     /* Fundo dos cartões */
+    --surface2: #1a2236;    /* Fundo de inputs e botões secundários */
+    --accent: #00d4ff;      /* Azul Ciano (Néon) */
+    --accent2: #f59e0b;     /* Laranja (Alerta) */
+    --green: #10b981;       /* Verde (Sucesso) */
+    --text: #e2e8f0;        /* Cor do texto principal */
+    --muted: #64748b;       /* Cor do texto secundário */
+    --border: rgba(0, 212, 255, 0.1); /* Bordas suaves */
+    --font-mono: 'Space Mono', monospace;
 }
-body { background: var(--bg); color: var(--text); font-family: 'DM Sans', sans-serif; padding: 2rem 1rem; }
-.wrapper { max-width: 500px; margin: 0 auto; }
-.card { background: var(--surface); border: 1px solid var(--border); border-radius: 16px; padding: 1.25rem; margin-bottom: 1rem; }
-h1 { font-family: 'Space Mono', monospace; font-size: 18px; color: var(--accent); text-align: center; margin-bottom: 1rem; }
-input, button { width: 100%; padding: 10px; margin: 5px 0; border-radius: 8px; border: 1px solid var(--border); background: var(--surface2); color: white; }
-button { background: var(--accent); color: #0a0f1e; font-weight: bold; cursor: pointer; border: none; }
-.freq-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; margin: 10px 0; }
-.fq-btn { font-size: 11px; background: var(--surface2); color: var(--muted); cursor: pointer; border: 1px solid var(--border); border-radius: 6px; padding: 8px; }
-.label-accent { font-size: 13px; color: var(--accent); margin-bottom: 10px; }
-#toasts { position: fixed; bottom: 20px; right: 20px; }
-.toast { background: #1e293b; border-left: 4px solid var(--accent); padding: 12px; border-radius: 8px; margin-top: 10px; }
+
+/* --- RESET BÁSICO --- */
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    line-height: 1.5;
+    padding: 20px;
+}
+
+.wrapper {
+    max-width: 480px;
+    margin: 0 auto;
+}
+
+/* --- CABEÇALHO --- */
+header h1 {
+    font-family: var(--font-mono);
+    color: var(--accent);
+    font-size: 1.2rem;
+    text-transform: uppercase;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.subtitle {
+    font-size: 0.8rem;
+    color: var(--muted);
+    margin-bottom: 25px;
+    padding-left: 32px;
+}
+
+/* --- CARTÕES (CARDS) --- */
+.card {
+    background: var(--surface);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    border-radius: 12px;
+    padding: 20px;
+    margin-bottom: 15px;
+}
+
+.card-title {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    color: var(--accent);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin-bottom: 15px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.card-title::before {
+    content: "●";
+    font-size: 8px;
+}
+
+/* --- DIAGNÓSTICO (ESTILO image_efb7c0.png) --- */
+.diag-box {
+    border: 1px solid var(--accent2);
+    border-radius: 8px;
+    padding: 15px;
+    background: rgba(245, 158, 11, 0.02);
+    margin-bottom: 15px;
+}
+
+.diag-row {
+    display: flex;
+    justify-content: space-between;
+    font-size: 13px;
+    margin-bottom: 10px;
+}
+
+.diag-label { color: var(--muted); }
+.diag-val { font-family: var(--font-mono); font-weight: bold; }
+
+/* --- INPUTS E BOTÕES --- */
+input, select {
+    width: 100%;
+    background: var(--surface2);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 8px;
+    padding: 12px;
+    color: white;
+    margin-bottom: 10px;
+    transition: border 0.3s;
+}
+
+input:focus {
+    border-color: var(--accent);
+}
+
+.btn-primary {
+    background: var(--accent);
+    color: var(--bg);
+    border: none;
+    padding: 12px;
+    border-radius: 8px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: opacity 0.2s;
+}
+
+.btn-secondary {
+    background: transparent;
+    border: 1px solid var(--accent);
+    color: var(--accent);
+    padding: 12px;
+    border-radius: 8px;
+    cursor: pointer;
+}
+
+/* --- COUNTDOWN --- */
+.countdown {
+    font-family: var(--font-mono);
+    font-size: 32px;
+    color: var(--accent2);
+    text-align: center;
+    margin: 15px 0;
+}
+
+/* --- HISTÓRICO --- */
+#history {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--muted);
+}
