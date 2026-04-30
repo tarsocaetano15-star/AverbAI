@@ -1,6 +1,5 @@
-// sw.js
 self.addEventListener('message', (event) => {
-    if (event.data && event.data.type === 'ALERTA') {
+    if (event.data && event.data.type === 'ALERTA_SISTEMA') {
         const options = {
             body: event.data.corpo,
             icon: 'https://cdn-icons-png.flaticon.com/512/2040/2040061.png',
@@ -12,4 +11,4 @@ self.addEventListener('message', (event) => {
 });
 
 self.addEventListener('install', () => self.skipWaiting());
-self.addEventListener('activate', () => self.clients.claim());
+self.addEventListener('activate', (event) => event.waitUntil(clients.claim()));
