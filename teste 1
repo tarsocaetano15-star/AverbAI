@@ -3,13 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Monitor de Navios PRO</title>
+    <title>Monitor de Navios PRO - D+6</title>
     <link rel="stylesheet" href="style.css">
     <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=DM+Sans:wght@400;500;700&display=swap" rel="stylesheet">
 </head>
 <body>
     <div class="wrapper">
-        <h1>🚢 MONITOR DE NAVIOS v3</h1>
+        <h1>🚢 MONITOR DE NAVIOS v4</h1>
 
         <div class="card">
             <div id="diag-text">Verificando permissões...</div>
@@ -17,27 +17,34 @@
         </div>
 
         <div class="card">
+            <div class="card-title">Cadastro (Alerta para D+6)</div>
             <input type="text" id="ship-name" placeholder="Nome do Navio">
             <input type="text" id="ship-port" placeholder="Porto">
-            <button onclick="addShip()">+ Adicionar Navio</button>
+            <button onclick="addShip()">+ Adicionar Navio (Agendar D+6)</button>
             <div id="list-container"></div>
         </div>
 
         <div class="card">
             <div class="label-accent">⏱️ Frequência de Verificação</div>
             <div class="freq-grid">
-                <button class="fq-btn" onclick="setFreq(15)">15 min</button>
-                <button class="fq-btn" onclick="setFreq(60)">1 hora</button>
-                <button class="fq-btn" onclick="setFreq(1440)">24 horas</button>
+                <button class="fq-btn" onclick="setFreq(1, this)">1 min</button>
+                <button class="fq-btn" onclick="setFreq(15, this)">15 min</button>
+                <button class="fq-btn" onclick="setFreq(30, this)">30 min</button>
+                <button class="fq-btn" onclick="setFreq(60, this)">1 h</button>
+                <button class="fq-btn" onclick="setFreq(360, this)">6 h</button>
+                <button class="fq-btn" onclick="setFreq(720, this)">12 h</button>
+                <button class="fq-btn on" onclick="setFreq(1440, this)" style="grid-column: span 2;">1× ao dia</button>
             </div>
-            <input type="range" id="freq-slider" min="1" max="1440" value="1440" oninput="updateSliderLabel(this.value)">
-            <div id="slider-label">Frequência: 1 vez ao dia</div>
+            <input type="hidden" id="freq-val" value="1440">
         </div>
 
         <div class="card">
-            <div class="label-accent">⏰ Horário de Alarme Fixo</div>
+            <div class="label-accent">⏰ Horário do Alarme</div>
             <input type="time" id="alarm-time" value="09:00">
-            <button onclick="startMonitor()" id="btn-start">▶ INICIAR MONITORAMENTO</button>
+            <div style="display: flex; gap: 10px; margin-top: 10px;">
+                <button onclick="startMonitor()" id="btn-start">▶ INICIAR</button>
+                <button onclick="stopMonitor()" id="btn-stop" style="background: #334155; display: none;">⏹ PARAR</button>
+            </div>
         </div>
     </div>
 
