@@ -1,17 +1,18 @@
-// Listener para mensagens vindas do script principal
+/**
+ * SERVICE WORKER - MONITOR DE NAVIOS
+ * Este script corre em segundo plano para enviar notificações.
+ */
 self.addEventListener('message', (event) => {
-    if (event.data && event.data.type === 'DISPARAR_ALERTA') {
-        const title = event.data.title;
+    if (event.data && event.data.type === 'ALERTA') {
         const options = {
-            body: event.data.body,
+            body: event.data.corpo,
             icon: 'https://cdn-icons-png.flaticon.com/512/2040/2040061.png',
             requireInteraction: true,
-            tag: event.data.tag || 'alerta-geral'
+            tag: 'ship-alert-' + Date.now()
         };
-
-        // O Service Worker mostra a notificação nativa do sistema
-        self.registration.showNotification(title, options);
+        self.registration.showNotification(event.data.titulo, options);
     }
 });
 
 self.addEventListener('install', () => self.skipWaiting());
+self.addEventListener('activate', () => self.clients.claim());
