@@ -19,34 +19,34 @@
   .card { background: var(--surface); border: 1px solid rgba(255,255,255,0.05); border-radius: 16px; padding: 1.25rem; margin-bottom: 1rem; }
   .label-accent { font-size: 12px; color: var(--accent); text-transform: uppercase; font-family: var(--font-mono); margin-bottom: 8px; display: block; }
   input, button { width: 100%; padding: 12px; margin: 5px 0; border-radius: 10px; border: 1px solid rgba(255,255,255,0.1); background: var(--surface2); color: white; font-size: 14px; outline: none; }
-  button { background: var(--accent); color: var(--bg); font-weight: bold; border: none; cursor: pointer; transition: 0.3s; }
   
-  /* Botões de Frequência - Visual Clicado */
+  /* Botões de Frequência com Feedback Visual */
   .freq-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; margin: 10px 0; }
-  .fq-btn { font-size: 10px; color: var(--muted); background: var(--surface2); border: 1px solid rgba(255,255,255,0.1); }
+  .fq-btn { font-size: 10px; color: var(--muted); background: var(--surface2); border: 1px solid rgba(255,255,255,0.1); cursor: pointer; transition: 0.3s; }
   .fq-btn.on { 
-    border: 2px solid var(--accent); 
-    color: var(--accent); 
-    background: rgba(0,212,255,0.15);
-    box-shadow: 0 0 10px rgba(0,212,255,0.2);
+    border: 2px solid var(--accent) !important; 
+    color: var(--accent) !important; 
+    background: rgba(0,212,255,0.15) !important;
+    box-shadow: 0 0 12px rgba(0,212,255,0.3);
   }
 
+  button.main { background: var(--accent); color: var(--bg); font-weight: bold; border: none; cursor: pointer; }
   .ship-monitor-card { background: var(--surface2); border: 1px solid var(--accent); border-left: 5px solid var(--accent); padding: 15px; border-radius: 12px; margin-bottom: 12px; }
   .deadline-info { color: var(--accent2); font-family: var(--font-mono); font-size: 11px; margin: 8px 0; display: block; }
-  .btn-stop { background: transparent; border: 1px solid var(--red); color: var(--red); font-size: 11px; margin-top: 10px; }
+  .btn-stop { background: transparent; border: 1px solid var(--red); color: var(--red); font-size: 11px; margin-top: 10px; cursor: pointer; }
   
   #toasts { position: fixed; bottom: 20px; right: 20px; z-index: 1000; pointer-events: none; }
-  .toast { background: #1e293b; border-left: 4px solid var(--accent); padding: 12px; border-radius: 8px; margin-top: 10px; font-size: 12px; pointer-events: auto; }
+  .toast { background: #1e293b; border-left: 4px solid var(--accent); padding: 12px; border-radius: 8px; margin-top: 10px; font-size: 12px; pointer-events: auto; box-shadow: 0 5px 15px rgba(0,0,0,0.5); }
 </style>
 </head>
 <body>
 <div id="toasts"></div>
 <div class="wrapper">
-  <header><h1>🚢 MONITOR DE NAVIOS v5</h1></header>
+  <header><h1>🚢 MONITOR DE NAVIOS</h1></header>
 
   <div class="card">
-    <div id="diag-text" style="font-size: 12px; color: var(--muted); margin-bottom: 10px;">Status: Aguardando Permissão</div>
-    <button id="btn-perm" onclick="solicitarPermissao()">🔔 Liberar Notificações no Sistema</button>
+    <div id="diag-text" style="font-size: 12px; color: var(--muted); margin-bottom: 10px;">Status: Verificando Navegador...</div>
+    <button class="main" id="btn-perm" onclick="solicitarPermissao()">🔔 Liberar Notificações no Sistema</button>
   </div>
 
   <div class="card">
@@ -55,7 +55,7 @@
     <input type="text" id="ship-port" placeholder="Porto"/>
     <span class="label-accent" style="margin-top: 10px;">Horário do Alerta (D+6):</span>
     <input type="time" id="alarm-time" value="09:00"/>
-    <button onclick="addShip()">+ Iniciar Monitoramento</button>
+    <button class="main" onclick="addShip()">+ Iniciar Monitoramento</button>
   </div>
 
   <div class="card">
@@ -67,7 +67,7 @@
       <button class="fq-btn" onclick="setFreq(60, this)">1 h</button>
       <button class="fq-btn" onclick="setFreq(360, this)">6 h</button>
       <button class="fq-btn" onclick="setFreq(720, this)">12 h</button>
-      <button class="fq-btn on" onclick="setFreq(1440, this)" style="grid-column: span 2;">24 h (1x ao dia)</button>
+      <button class="fq-btn on" onclick="setFreq(1440, this)" style="grid-column: span 2;">24 h (D+1)</button>
     </div>
     <input type="hidden" id="freq-val" value="1440"/>
   </div>
