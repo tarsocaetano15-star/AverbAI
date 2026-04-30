@@ -1,18 +1,17 @@
-/**
- * SERVICE WORKER - MONITOR DE NAVIOS
- * Garante que a notificação apareça mesmo com a aba fechada.
- */
+// Listener para mensagens vindas do script principal
 self.addEventListener('message', (event) => {
-    if (event.data && event.data.type === 'ALERTA') {
+    if (event.data && event.data.type === 'DISPARAR_ALERTA') {
+        const title = event.data.title;
         const options = {
-            body: event.data.corpo,
+            body: event.data.body,
             icon: 'https://cdn-icons-png.flaticon.com/512/2040/2040061.png',
-            requireInteraction: true, // A notificação não some sozinha
-            tag: 'ship-alert-' + Date.now()
+            requireInteraction: true,
+            tag: event.data.tag || 'alerta-geral'
         };
-        self.registration.showNotification(event.data.titulo, options);
+
+        // O Service Worker mostra a notificação nativa do sistema
+        self.registration.showNotification(title, options);
     }
 });
 
 self.addEventListener('install', () => self.skipWaiting());
-self.addEventListener('activate', () => self.clients.claim());
