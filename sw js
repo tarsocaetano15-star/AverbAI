@@ -1,12 +1,20 @@
 /**
- * DOCUMENTAÇÃO: Este ficheiro não morre quando fechas a aba.
+ * DOCUMENTAÇÃO: SERVICE WORKER
+ * Este arquivo permite que o sistema envie notificações mesmo se a aba estiver fechada.
  */
 self.addEventListener('message', (event) => {
-    if (event.data.type === 'ALERTA') {
-        self.registration.showNotification("🚢 Monitor de Navios", {
-            body: event.data.msg,
-            icon: "https://cdn-icons-png.flaticon.com/512/2040/2040061.png",
-            requireInteraction: true
-        });
+    if (event.data && event.data.type === 'ALERTA') {
+        const title = event.data.titulo;
+        const options = {
+            body: event.data.corpo,
+            icon: 'https://cdn-icons-png.flaticon.com/512/2040/2040061.png',
+            requireInteraction: true, // A notificação não some até ser clicada
+            tag: 'monitor-navio-' + Date.now() // Garante notificações únicas
+        };
+
+        self.registration.showNotification(title, options);
     }
 });
+
+self.addEventListener('install', () => self.skipWaiting());
+self.addEventListener('activate', () => self.clients.claim());
