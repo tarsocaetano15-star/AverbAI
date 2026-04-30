@@ -1,18 +1,16 @@
 /**
- * DOCUMENTAÇÃO: SERVICE WORKER
- * Este arquivo permite que o sistema envie notificações mesmo se a aba estiver fechada.
+ * SERVICE WORKER - MONITOR DE NAVIOS
+ * Garante que a notificação apareça mesmo com a aba fechada.
  */
 self.addEventListener('message', (event) => {
     if (event.data && event.data.type === 'ALERTA') {
-        const title = event.data.titulo;
         const options = {
             body: event.data.corpo,
             icon: 'https://cdn-icons-png.flaticon.com/512/2040/2040061.png',
-            requireInteraction: true, // A notificação não some até ser clicada
-            tag: 'monitor-navio-' + Date.now() // Garante notificações únicas
+            requireInteraction: true, // A notificação não some sozinha
+            tag: 'ship-alert-' + Date.now()
         };
-
-        self.registration.showNotification(title, options);
+        self.registration.showNotification(event.data.titulo, options);
     }
 });
 
