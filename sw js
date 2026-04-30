@@ -1,18 +1,12 @@
-/**
- * SERVICE WORKER - MONITOR DE NAVIOS
- * Este script corre em segundo plano para enviar notificações.
- */
 self.addEventListener('message', (event) => {
     if (event.data && event.data.type === 'ALERTA') {
-        const options = {
+        self.registration.showNotification(event.data.titulo, {
             body: event.data.corpo,
             icon: 'https://cdn-icons-png.flaticon.com/512/2040/2040061.png',
             requireInteraction: true,
             tag: 'ship-alert-' + Date.now()
-        };
-        self.registration.showNotification(event.data.titulo, options);
+        });
     }
 });
-
 self.addEventListener('install', () => self.skipWaiting());
 self.addEventListener('activate', () => self.clients.claim());
