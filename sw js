@@ -1,9 +1,12 @@
-self.addEventListener('install', (event) => {
-    self.skipWaiting();
+self.addEventListener('push', function(event) {
+    const opts = {
+        body: event.data.text(),
+        requireInteraction: true
+    };
+    event.waitUntil(self.registration.showNotification('Monitor de Navios', opts));
 });
 
-self.addEventListener('activate', (event) => {
-    event.waitUntil(clients.claim());
+self.addEventListener('notificationclick', function(event) {
+    event.notification.close();
+    event.waitUntil(clients.openWindow('/'));
 });
-
-// Este arquivo fica vazio ou com esse código básico para manter o Service Worker vivo
