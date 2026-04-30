@@ -1,16 +1,86 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-  <meta charset="UTF-8">
-  <title>Meu App PWA</title>
-  <link rel="stylesheet" href="style.css">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Monitor de Navios</title>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=DM+Sans:wght@400;500;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg: #0a0f1e; --surface: #111827; --surface2: #1a2236;
+            --accent: #00d4ff; --accent2: #f59e0b; --green: #10b981;
+            --text: #e2e8f0; --muted: #64748b; --border: rgba(0,212,255,0.2);
+            --font-mono: 'Space Mono', monospace;
+        }
+
+        body { 
+            background: var(--bg); color: var(--text); font-family: 'DM Sans', sans-serif;
+            padding: 2rem 1rem; display: flex; justify-content: center;
+        }
+
+        .wrapper { width: 100%; max-width: 480px; }
+        
+        /* Estilo do Cabeçalho conforme imagem_efb7c0.png */
+        header h1 { font-family: var(--font-mono); color: var(--accent); font-size: 22px; display: flex; align-items: center; gap: 10px; }
+        .subtitle { font-size: 12px; color: var(--muted); margin-bottom: 20px; padding-left: 35px; }
+
+        .card { 
+            background: var(--surface); border: 1px solid rgba(255,255,255,0.05); 
+            border-radius: 12px; padding: 1.5rem; margin-bottom: 1rem;
+        }
+
+        .card-title { 
+            font-family: var(--font-mono); font-size: 11px; color: var(--accent); 
+            text-transform: uppercase; margin-bottom: 1rem; display: flex; align-items: center; gap: 8px;
+        }
+
+        /* Tabela de Diagnóstico */
+        .diag-box { border: 1px solid var(--accent2); border-radius: 8px; padding: 15px; font-size: 13px; margin-bottom: 15px; }
+        .diag-row { display: flex; justify-content: space-between; margin-bottom: 8px; }
+        .status-ok { color: var(--green); font-family: var(--font-mono); }
+
+        input, select, button { 
+            width: 100%; background: var(--surface2); border: 1px solid rgba(255,255,255,0.1);
+            color: white; padding: 12px; border-radius: 8px; margin-bottom: 10px;
+        }
+
+        .btn-main { background: var(--accent); color: var(--bg); font-weight: bold; border: none; cursor: pointer; }
+        .btn-sec { background: transparent; border: 1px solid var(--accent); color: var(--accent); }
+
+        /* Countdown Neon */
+        .countdown { font-family: var(--font-mono); font-size: 36px; color: var(--accent2); text-align: center; text-shadow: 0 0 10px rgba(245,158,11,0.3); }
+    </style>
 </head>
 <body>
-  <h1>Meu App com Service Worker 🚀</h1>
-  <p>Teste offline depois de carregar uma vez.</p>
+    <div class="wrapper">
+        <header>
+            <h1>🚢 MONITOR DE NAVIOS</h1>
+            <div class="subtitle">Alertas de saída portuária</div>
+        </header>
 
-  <button id="btn">Clique aqui</button>
+        <section class="card">
+            <div class="card-title">● Diagnóstico do sistema</div>
+            <div class="diag-box">
+                <div class="diag-row"><span>Notification API</span><span class="status-ok">✔ Suportada</span></div>
+                <div class="diag-row"><span>Permissão atual</span><span id="p-status" style="color:var(--accent2)">⚠ Aguardando</span></div>
+            </div>
+            <button class="btn-main" onclick="solicitarPermissao()">🔔 Solicitar permissão</button>
+        </section>
 
-  <script src="script.js"></script>
+        <section class="card">
+            <div class="card-title">● Navios monitorados</div>
+            <input type="text" id="ship-name" placeholder="Nome do navio (ex: MSC OSCAR)">
+            <button class="btn-main" onclick="addShip()">+ Adicionar navio</button>
+            <div id="list" style="font-size:12px; color:var(--muted); text-align:center;">Nenhum navio adicionado.</div>
+        </section>
+
+        <section class="card">
+            <div class="card-title">● Alarme Diário</div>
+            <input type="time" id="alarm-time" value="09:00">
+            <div class="countdown" id="timer">00:00:00</div>
+            <button class="btn-main" onclick="startMonitor()">▶ Iniciar</button>
+        </section>
+    </div>
+    <script src="script.js"></script>
 </body>
 </html>
