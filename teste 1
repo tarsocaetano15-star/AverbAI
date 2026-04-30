@@ -1,99 +1,18 @@
-<!DOCTYPE html>
-<html lang="pt-BR">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Monitor de Navios PRO</title>
-    <!-- Importação de Fontes -->
-    <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=DM+Sans:wght@400;500;700&display=swap" rel="stylesheet">
-    <!-- Link para o CSS Externo -->
-    <link rel="stylesheet" href="style.css">
-</head>
-<body>
+/**
+ * SERVICE WORKER - MONITOR DE NAVIOS
+ * Este script corre em segundo plano para enviar notificações.
+ */
+self.addEventListener('message', (event) => {
+    if (event.data && event.data.type === 'ALERTA') {
+        const options = {
+            body: event.data.corpo,
+            icon: 'https://cdn-icons-png.flaticon.com/512/2040/2040061.png',
+            requireInteraction: true,
+            tag: 'ship-alert-' + Date.now()
+        };
+        self.registration.showNotification(event.data.titulo, options);
+    }
+});
 
-<div id="toasts"></div>
-
-<div class="wrapper">
-    <header>
-        <div class="header-top"><span>🚢</span><h1>MONITOR DE NAVIOS</h1></div>
-        <div class="subtitle">Alertas de saída portuária</div>
-    </header>
-
-    <!-- DIAGNÓSTICO -->
-    <section class="card">
-        <div class="card-title">Diagnóstico do sistema</div>
-        <div class="diag-box">
-            <div class="diag-row"><span>Notification API</span><span class="val-ok" id="d-api">Suportada</span></div>
-            <div class="diag-row"><span>Permissão atual</span><span class="val-ok" id="d-perm">Aguardando</span></div>
-        </div>
-        <div class="btn-group">
-            <button onclick="solicitarPermissao()">🔔 Solicitar permissão</button>
-            <button class="outline" onclick="testarTudo()">🧪 Testar tudo agora</button>
-        </div>
-    </section>
-
-    <!-- NAVIOS MONITORADOS -->
-    <section class="card">
-        <div class="card-title">Navios monitorados</div>
-        <input type="text" id="ship-name" placeholder="Nome do navio (ex: MSC OSCAR)">
-        <div class="row">
-            <select id="ship-port-type">
-                <option value="origin">Porto de origem</option>
-                <option value="dest">Porto de destino</option>
-            </select>
-            <input type="text" id="ship-port" placeholder="Nome do porto">
-        </div>
-        <button onclick="addShip()">+ Adicionar navio</button>
-        <div id="ships-list" class="list-container"></div>
-    </section>
-
-    <!-- FREQUÊNCIA -->
-    <section class="card">
-        <div class="card-title">Frequência de verificação</div>
-        <div class="freq-grid">
-            <button class="fq" onclick="setFreq(1, this)">1 min</button>
-            <button class="fq" onclick="setFreq(10, this)">10 min</button>
-            <button class="fq" onclick="setFreq(30, this)">30 min</button>
-            <button class="fq" onclick="setFreq(60, this)">1 h</button>
-            <button class="fq" onclick="setFreq(360, this)">6 h</button>
-            <button class="fq" onclick="setFreq(720, this)">12 h</button>
-            <button class="fq on" onclick="setFreq(1440, this)" style="grid-column: span 2;">1× ao dia</button>
-        </div>
-        <input type="range" id="freq-slider" min="1" max="1440" value="1440" oninput="updateFreqLabel(this.value)">
-        <div id="freq-label" class="label-info">Frequência: 1× ao dia</div>
-    </section>
-
-    <!-- ALARME DIÁRIO -->
-    <section class="card">
-        <div class="card-title">Alarme diário</div>
-        <div class="row-center">
-            <span class="label-info">Horário:</span>
-            <input type="time" id="alarm-time" value="09:00" class="time-input">
-        </div>
-        <div class="countdown" id="timer-display">00:00:00</div>
-        <div class="cd-label">próximo disparo</div>
-    </section>
-
-    <!-- CONTROLES E STATUS -->
-    <div class="status-bar">
-        <div class="sdot" id="sdot"></div>
-        <span id="stxt">Monitoramento inativo.</span>
-    </div>
-    <div class="btn-group">
-        <button id="btn-start" onclick="startMonitor()">▶ Iniciar</button>
-        <button id="btn-stop" class="sec" onclick="stopMonitor()" disabled>⏹ Parar</button>
-        <button class="outline" onclick="testarNotificacao()">🔔 Testar</button>
-    </div>
-
-    <!-- HISTÓRICO -->
-    <section class="card">
-        <div class="card-title">Histórico</div>
-        <div id="log-container" class="log-list">
-            <div class="log-item">--:--:-- Aguardando...</div>
-        </div>
-    </section>
-</div>
-
-<script src="script.js"></script>
-</body>
-</html>
+self.addEventListener('install', () => self.skipWaiting());
+self.addEventListener('activate', () => self.clients.claim());
