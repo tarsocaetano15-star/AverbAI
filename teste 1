@@ -1,86 +1,234 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Monitor de Navios</title>
-    <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=DM+Sans:wght@400;500;700&display=swap" rel="stylesheet">
-    <style>
-        :root {
-            --bg: #0a0f1e; --surface: #111827; --surface2: #1a2236;
-            --accent: #00d4ff; --accent2: #f59e0b; --green: #10b981;
-            --text: #e2e8f0; --muted: #64748b; --border: rgba(0,212,255,0.2);
-            --font-mono: 'Space Mono', monospace;
-        }
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Monitor de Navios PRO</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=DM+Sans:wght@400;500;700&display=swap" rel="stylesheet"/>
+<style>
+  :root {
+    --bg: #0a0f1e; --surface: #111827; --surface2: #1a2236;
+    --accent: #00d4ff; --accent2: #f59e0b; --green: #10b981;
+    --red: #ef4444; --text: #e2e8f0; --muted: #64748b;
+    --font-mono: 'Space Mono', monospace;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: var(--bg); color: var(--text); font-family: 'DM Sans', sans-serif; padding: 2rem 1rem; }
+  .wrapper { max-width: 480px; margin: 0 auto; }
+  
+  header h1 { font-family: var(--font-mono); color: var(--accent); font-size: 22px; display: flex; align-items: center; gap: 10px; text-transform: uppercase; }
+  .subtitle { font-size: 12px; color: var(--muted); margin-bottom: 20px; padding-left: 35px; }
 
-        body { 
-            background: var(--bg); color: var(--text); font-family: 'DM Sans', sans-serif;
-            padding: 2rem 1rem; display: flex; justify-content: center;
-        }
+  .card { background: var(--surface); border: 1px solid rgba(255,255,255,0.05); border-radius: 12px; padding: 1.5rem; margin-bottom: 1rem; }
+  .card-title { font-family: var(--font-mono); font-size: 11px; color: var(--accent); text-transform: uppercase; margin-bottom: 1rem; display: flex; align-items: center; gap: 8px; }
+  .card-title::before { content: '●'; font-size: 8px; }
 
-        .wrapper { width: 100%; max-width: 480px; }
-        
-        /* Estilo do Cabeçalho conforme imagem_efb7c0.png */
-        header h1 { font-family: var(--font-mono); color: var(--accent); font-size: 22px; display: flex; align-items: center; gap: 10px; }
-        .subtitle { font-size: 12px; color: var(--muted); margin-bottom: 20px; padding-left: 35px; }
+  .diag-box { border: 1px solid var(--accent2); border-radius: 8px; padding: 15px; background: rgba(245,158,11,0.02); margin-bottom: 15px; font-size: 13px; }
+  .diag-row { display: flex; justify-content: space-between; margin-bottom: 8px; }
+  .ok { color: var(--green); font-family: var(--font-mono); }
 
-        .card { 
-            background: var(--surface); border: 1px solid rgba(255,255,255,0.05); 
-            border-radius: 12px; padding: 1.5rem; margin-bottom: 1rem;
-        }
+  input, select, button { width: 100%; background: var(--surface2); border: 1px solid rgba(255,255,255,0.1); color: white; padding: 12px; border-radius: 8px; margin-bottom: 10px; outline: none; transition: 0.2s; }
+  input:focus { border-color: var(--accent); }
+  
+  button { background: var(--accent); color: var(--bg); font-weight: bold; border: none; cursor: pointer; }
+  button:hover { opacity: 0.85; }
+  button.outline { background: transparent; border: 1px solid var(--accent); color: var(--accent); }
 
-        .card-title { 
-            font-family: var(--font-mono); font-size: 11px; color: var(--accent); 
-            text-transform: uppercase; margin-bottom: 1rem; display: flex; align-items: center; gap: 8px;
-        }
+  .freq-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-bottom: 10px; }
+  .fq { font-size: 10px; padding: 8px; cursor: pointer; color: var(--muted); }
+  .fq.on { border-color: var(--accent); color: var(--accent); background: rgba(0,212,255,0.1); }
 
-        /* Tabela de Diagnóstico */
-        .diag-box { border: 1px solid var(--accent2); border-radius: 8px; padding: 15px; font-size: 13px; margin-bottom: 15px; }
-        .diag-row { display: flex; justify-content: space-between; margin-bottom: 8px; }
-        .status-ok { color: var(--green); font-family: var(--font-mono); }
+  .countdown { font-family: var(--font-mono); font-size: 36px; color: var(--accent2); text-align: center; text-shadow: 0 0 10px rgba(245,158,11,0.3); margin: 10px 0; }
+  .cd-label { text-align: center; font-size: 10px; color: var(--muted); text-transform: uppercase; letter-spacing: 2px; }
 
-        input, select, button { 
-            width: 100%; background: var(--surface2); border: 1px solid rgba(255,255,255,0.1);
-            color: white; padding: 12px; border-radius: 8px; margin-bottom: 10px;
-        }
+  .ship-item { background: var(--surface2); padding: 10px; border-radius: 8px; margin-bottom: 5px; font-size: 13px; display: flex; justify-content: space-between; align-items: center; }
+  .btn-del { width: auto; color: var(--red); background: none; border: none; font-size: 18px; margin: 0; padding: 0 5px; }
 
-        .btn-main { background: var(--accent); color: var(--bg); font-weight: bold; border: none; cursor: pointer; }
-        .btn-sec { background: transparent; border: 1px solid var(--accent); color: var(--accent); }
-
-        /* Countdown Neon */
-        .countdown { font-family: var(--font-mono); font-size: 36px; color: var(--accent2); text-align: center; text-shadow: 0 0 10px rgba(245,158,11,0.3); }
-    </style>
+  #toasts { position: fixed; bottom: 20px; right: 20px; z-index: 100; }
+  .toast { background: #1e293b; border-left: 4px solid var(--accent); padding: 12px; border-radius: 8px; margin-top: 10px; font-size: 13px; box-shadow: 0 5px 15px rgba(0,0,0,0.4); }
+</style>
 </head>
 <body>
-    <div class="wrapper">
-        <header>
-            <h1>🚢 MONITOR DE NAVIOS</h1>
-            <div class="subtitle">Alertas de saída portuária</div>
-        </header>
 
-        <section class="card">
-            <div class="card-title">● Diagnóstico do sistema</div>
-            <div class="diag-box">
-                <div class="diag-row"><span>Notification API</span><span class="status-ok">✔ Suportada</span></div>
-                <div class="diag-row"><span>Permissão atual</span><span id="p-status" style="color:var(--accent2)">⚠ Aguardando</span></div>
-            </div>
-            <button class="btn-main" onclick="solicitarPermissao()">🔔 Solicitar permissão</button>
-        </section>
+<div id="toasts"></div>
 
-        <section class="card">
-            <div class="card-title">● Navios monitorados</div>
-            <input type="text" id="ship-name" placeholder="Nome do navio (ex: MSC OSCAR)">
-            <button class="btn-main" onclick="addShip()">+ Adicionar navio</button>
-            <div id="list" style="font-size:12px; color:var(--muted); text-align:center;">Nenhum navio adicionado.</div>
-        </section>
+<div class="wrapper">
+  <header>
+    <h1>🚢 MONITOR DE NAVIOS</h1>
+    <div class="subtitle">Alertas de saída portuária</div>
+  </header>
 
-        <section class="card">
-            <div class="card-title">● Alarme Diário</div>
-            <input type="time" id="alarm-time" value="09:00">
-            <div class="countdown" id="timer">00:00:00</div>
-            <button class="btn-main" onclick="startMonitor()">▶ Iniciar</button>
-        </section>
+  <section class="card">
+    <div class="card-title">Diagnóstico do sistema</div>
+    <div class="diag-box">
+      <div class="diag-row"><span>Notification API</span><span class="ok">✔ Suportada</span></div>
+      <div class="diag-row"><span>Permissão atual</span><span id="p-status" style="color:var(--accent2)">⚠ Aguardando</span></div>
     </div>
-    <script src="script.js"></script>
+    <div style="display:flex; gap:10px;">
+      <button onclick="solicitarPermissao()">🔔 Solicitar permissão</button>
+      <button class="outline" onclick="testar()">🧪 Testar agora</button>
+    </div>
+  </section>
+
+  <section class="card">
+    <div class="card-title">Navios monitorados</div>
+    <input type="text" id="ship-name" placeholder="Nome do navio (ex: MSC OSCAR)">
+    <input type="text" id="ship-port" placeholder="Nome do porto">
+    <button onclick="addShip()">+ Adicionar navio</button>
+    <div id="ship-list" style="margin-top: 10px;"></div>
+  </section>
+
+  <section class="card">
+    <div class="card-title">Frequência de verificação</div>
+    <div class="freq-grid">
+      <button class="fq" onclick="setFreq(15, this)">15 min</button>
+      <button class="fq" onclick="setFreq(60, this)">1 hora</button>
+      <button class="fq" onclick="setFreq(720, this)">12 horas</button>
+      <button class="fq on" onclick="setFreq(1440, this)">1x ao dia</button>
+    </div>
+    <input type="range" id="freq-slider" min="1" max="1440" value="1440" oninput="updateFreqLabel(this.value)">
+    <div id="freq-label" style="text-align:center; font-size:11px; color:var(--muted);">Frequência: 1x ao dia</div>
+  </section>
+
+  <section class="card">
+    <div class="card-title">Alarme Diário</div>
+    <input type="time" id="alarm-time" value="09:00" style="width:140px; margin: 0 auto; display:block;">
+    <div class="countdown" id="timer">00:00:00</div>
+    <div class="cd-label">Próximo disparo</div>
+  </section>
+
+  <div style="display:flex; gap:10px;">
+    <button id="btn-start" onclick="startMonitor()">▶ Iniciar</button>
+    <button class="outline" onclick="stopMonitor()" id="btn-stop" disabled>■ Parar</button>
+  </div>
+</div>
+
+<script>
+  // 1. REGISTRO DO SERVICE WORKER PARA ABA FECHADA
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('sw.js').then(reg => {
+      console.log('Operário de segundo plano (SW) ativo!');
+    });
+  }
+
+  let ships = [];
+  let monitorInt = null;
+  let lastAlarmDate = '';
+
+  // PERMISSÕES
+  async function solicitarPermissao() {
+    const p = await Notification.requestPermission();
+    updateStatus();
+    if(p === 'granted') dispararAlerta("Sistema Ativo", "Notificações nativas liberadas!");
+  }
+
+  function updateStatus() {
+    const s = document.getElementById('p-status');
+    if (Notification.permission === 'granted') {
+      s.textContent = '✔ Concedida'; s.className = 'ok'; s.style.color = 'var(--green)';
+    } else {
+      s.textContent = '⚠ Bloqueada'; s.style.color = 'var(--red)';
+    }
+  }
+
+  // GESTÃO DE NAVIOS
+  function addShip() {
+    const n = document.getElementById('ship-name').value;
+    const p = document.getElementById('ship-port').value;
+    if(!n) return;
+    ships.push({id: Date.now(), name: n, port: p});
+    render();
+    document.getElementById('ship-name').value = '';
+    document.getElementById('ship-port').value = '';
+  }
+
+  function render() {
+    const list = document.getElementById('ship-list');
+    list.innerHTML = ships.map(s => `
+      <div class="ship-item">
+        <span><b>${s.name}</b> (${s.port || 'N/A'})</span>
+        <button class="btn-del" onclick="removeShip(${s.id})">×</button>
+      </div>`).join('');
+  }
+
+  function removeShip(id) {
+    ships = ships.filter(s => s.id !== id);
+    render();
+  }
+
+  // MONITORAMENTO
+  function startMonitor() {
+    if(!ships.length) return alert("Adicione um navio!");
+    document.getElementById('btn-start').textContent = "🟢 ATIVO";
+    document.getElementById('btn-start').disabled = true;
+    document.getElementById('btn-stop').disabled = false;
+
+    monitorInt = setInterval(() => {
+      const agora = new Date();
+      const horaAtual = agora.getHours().toString().padStart(2,'0') + ":" + agora.getMinutes().toString().padStart(2,'0');
+      const horaAlarme = document.getElementById('alarm-time').value;
+
+      if(horaAtual === horaAlarme && lastAlarmDate !== agora.toDateString()) {
+        ships.forEach(s => dispararAlerta(`Navio: ${s.name}`, `Saída prevista de: ${s.port}`));
+        lastAlarmDate = agora.toDateString();
+      }
+      updateTimer();
+    }, 1000);
+  }
+
+  function stopMonitor() {
+    clearInterval(monitorInt);
+    document.getElementById('btn-start').textContent = "▶ Iniciar";
+    document.getElementById('btn-start').disabled = false;
+    document.getElementById('btn-stop').disabled = true;
+  }
+
+  // DISPARO (COMUNICAÇÃO COM SW)
+  function dispararAlerta(titulo, corpo) {
+    showToast(titulo, corpo);
+    if ('serviceWorker' in navigator && Notification.permission === 'granted') {
+      navigator.serviceWorker.ready.then(reg => {
+        reg.active.postMessage({ type: 'ALERTA', titulo, corpo });
+      });
+    }
+  }
+
+  function showToast(t, m) {
+    const el = document.createElement('div');
+    el.className = 'toast';
+    el.innerHTML = `<b>${t}</b><br>${m}`;
+    document.getElementById('toasts').appendChild(el);
+    setTimeout(() => el.remove(), 8000);
+  }
+
+  function updateTimer() {
+    const time = document.getElementById('alarm-time').value;
+    const now = new Date();
+    const t = new Date();
+    const [h, m] = time.split(':');
+    t.setHours(h, m, 0);
+    if(t <= now) t.setDate(t.getDate() + 1);
+    const diff = t - now;
+    const hh = Math.floor(diff/3600000).toString().padStart(2,'0');
+    const mm = Math.floor((diff%3600000)/60000).toString().padStart(2,'0');
+    const ss = Math.floor((diff%60000)/1000).toString().padStart(2,'0');
+    document.getElementById('timer').textContent = `${hh}:${mm}:${ss}`;
+  }
+
+  function setFreq(v, btn) {
+    document.getElementById('freq-slider').value = v;
+    updateFreqLabel(v);
+    document.querySelectorAll('.fq').forEach(b => b.classList.remove('on'));
+    btn.classList.add('on');
+  }
+
+  function updateFreqLabel(v) {
+    document.getElementById('freq-label').textContent = v >= 1440 ? "Frequência: 1x ao dia" : `Frequência: ${v} min`;
+  }
+
+  function testar() { dispararAlerta("Teste de Monitor", "O pop-up deve aparecer agora!"); }
+
+  window.onload = () => { updateStatus(); setInterval(updateTimer, 1000); };
+</script>
 </body>
 </html>
