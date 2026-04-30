@@ -1,12 +1,7 @@
-self.addEventListener('push', function(event) {
-    const opts = {
-        body: event.data.text(),
-        requireInteraction: true
-    };
-    event.waitUntil(self.registration.showNotification('Monitor de Navios', opts));
-});
+self.addEventListener('install', () => self.skipWaiting());
+self.addEventListener('activate', () => clients.claim());
 
-self.addEventListener('notificationclick', function(event) {
+self.addEventListener('notificationclick', (event) => {
     event.notification.close();
     event.waitUntil(clients.openWindow('/'));
 });
