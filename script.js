@@ -1,14 +1,14 @@
-// REGISTRO DO SERVICE WORKER (Essencial para GitHub Pages)
+// REGISTRO DO SERVICE WORKER COM CAMINHO PARA GITHUB
 if ('serviceWorker' in navigator) {
-    navigator.serviceWorker.register('./sw.js').then(reg => {
-        console.log('Service Worker ativo!');
+    navigator.serviceWorker.register('./sw.js', { scope: './' }).then(reg => {
+        console.log('Service Worker Registrado!');
     }).catch(err => console.log('Erro ao registrar SW:', err));
 }
 
 let monitoredShips = [];
 let lastFreqCheck = Date.now();
 
-// Motor de verificação (Roda sempre que o site estiver aberto)
+// O "Motor" que checa o tempo a cada segundo
 setInterval(monitorEngine, 1000);
 
 async function solicitarPermissao() {
@@ -16,7 +16,7 @@ async function solicitarPermissao() {
     if (p === "granted") {
         document.getElementById('diag-text').innerHTML = "✅ Notificações Ativas";
         document.getElementById('btn-perm').style.display = "none";
-        dispararAlertaNativa("Sistema Pronto", "As notificações aparecerão fora do navegador.");
+        dispararAlertaReal("Sistema Ativo", "As notificações aparecerão agora.");
     }
 }
 
@@ -28,7 +28,7 @@ function addShip() {
     if (!name || !alarm) return alert("Preencha Nome e Horário!");
 
     const target = new Date();
-    target.setDate(target.getDate() + 6); // Lógica D+6
+    target.setDate(target.getDate() + 6); // Regra D+6
 
     const ship = {
         id: Date.now(),
@@ -42,10 +42,7 @@ function addShip() {
 
     monitoredShips.push(ship);
     renderList();
-    dispararAlertaNativa("Monitoramento Iniciado", `Navio ${ship.name} agendado para ${ship.displayDate}`);
-    
-    document.getElementById('ship-name').value = "";
-    document.getElementById('ship-port').value = "";
+    dispararAlertaReal("Monitoramento Iniciado", `Navio ${ship.name} agendado para ${ship.displayDate}`);
 }
 
 function renderList() {
@@ -67,7 +64,6 @@ function removeShip(id) {
 
 function setFreq(min, btn) {
     document.getElementById('freq-val').value = min;
-    // Feedback visual dos botões
     document.querySelectorAll('.fq-btn').forEach(b => b.classList.remove('on'));
     btn.classList.add('on');
 }
@@ -79,38 +75,45 @@ function monitorEngine() {
     // 1. Verificar prazos individuais
     monitoredShips.forEach(s => {
         if (s.active && agora.toDateString() === s.targetDate && horaAgora === s.alarmTime) {
-            dispararAlertaNativa(`🚢 PRAZO ATINGIDO: ${s.name}`, `O prazo D+6 para ${s.port} venceu.`);
+            dispararAlertaReal(`🚢 PRAZO ATINGIDO: ${s.name}`, `O prazo D+6 para ${s.port} venceu.`);
             s.active = false; 
         }
     });
 
-    // 2. Verificação de Frequência Global
+    // 2. Frequência Global
     const fMin = parseInt(document.getElementById('freq-val').value);
     if (agora.getTime() - lastFreqCheck >= fMin * 60000) {
         lastFreqCheck = agora.getTime();
         if (monitoredShips.length > 0) {
-            dispararAlertaNativa("Monitor Ativo", `Acompanhando ${monitoredShips.length} navios.`);
+            dispararAlertaReal("Monitor Ativo", `Acompanhando ${monitoredShips.length} navios.`);
         }
     }
 }
 
-function dispararAlertaNativa(titulo, corpo) {
-    // Toast Interno
+function dispararAlertaReal(titulo, corpo) {
+    // 1. Toast Interno (Sempre aparece)
     const t = document.createElement('div');
     t.className = 'toast';
     t.innerHTML = `<b>${titulo}</b><br>${corpo}`;
     document.getElementById('toasts').appendChild(t);
-    setTimeout(() => t.remove(), 6000);
+    setTimeout(() => t.remove(), 7000);
 
-    // Notificação de Sistema (Para fora da aba)
-    if (Notification.permission === 'granted' && navigator.serviceWorker.controller) {
-        navigator.serviceWorker.controller.postMessage({
-            type: 'ALERTA_SISTEMA',
-            titulo: titulo,
-            corpo: corpo
-        });
-    } else if (Notification.permission === 'granted') {
-        // Fallback caso o SW ainda não tenha assumido o controle total
-        new Notification(titulo, { body: corpo, requireInteraction: true });
+    // 2. Notificação de Sistema (Fora da aba)
+    if (Notification.permission === 'granted') {
+        // Tenta via Service Worker primeiro (Melhor para aba fechada/Excel)
+        if (navigator.serviceWorker.controller) {
+            navigator.serviceWorker.controller.postMessage({
+                type: 'ALERTA_SISTEMA',
+                titulo: titulo,
+                corpo: corpo
+            });
+        } else {
+            // Plano B: Notificação direta se o SW ainda não estiver pronto
+            new Notification(titulo, { 
+                body: corpo, 
+                icon: 'https://cdn-icons-png.flaticon.com/512/2040/2040061.png',
+                requireInteraction: true 
+            });
+        }
     }
 }
