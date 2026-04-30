@@ -1,118 +1,16 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Monitor de Navios</title>
-    <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=DM+Sans:wght@400;500;700&display=swap" rel="stylesheet">
-    <style>
-        :root {
-            --bg: #0a0f1e; --surface: #111827; --surface2: #1a2236;
-            --accent: #00d4ff; --accent2: #f59e0b; --green: #10b981;
-            --red: #ef4444; --text: #e2e8f0; --muted: #64748b;
-            --font-mono: 'Space Mono', monospace;
-        }
-
-        * { box-sizing: border-box; margin: 0; padding: 0; }
-        body { 
-            background: var(--bg); color: var(--text); 
-            font-family: 'DM Sans', sans-serif; padding: 2rem 1rem;
-            background-image: radial-gradient(circle at top right, rgba(0,212,255,0.05), transparent);
-        }
-
-        .wrapper { max-width: 500px; margin: 0 auto; }
-        header { margin-bottom: 2rem; }
-        h1 { font-family: var(--font-mono); font-size: 20px; color: var(--accent); text-transform: uppercase; letter-spacing: 1px; }
-        .subtitle { font-size: 12px; color: var(--muted); margin-top: 4px; }
-
-        .card { 
-            background: var(--surface); border: 1px solid var(--border); 
-            border-radius: 12px; padding: 1.5rem; margin-bottom: 1.5rem;
-            border: 1px solid rgba(255,255,255,0.05);
-        }
-
-        .card-title { 
-            font-family: var(--font-mono); font-size: 11px; color: var(--accent); 
-            text-transform: uppercase; margin-bottom: 1rem; display: flex; align-items: center; gap: 8px;
-        }
-        .card-title::before { content: '●'; font-size: 8px; }
-
-        .diag-box { 
-            border: 1px solid var(--accent2); border-radius: 8px; padding: 12px; 
-            font-size: 12px; margin-bottom: 1rem; background: rgba(245,158,11,0.02);
-        }
-        .diag-row { display: flex; justify-content: space-between; margin-bottom: 8px; color: var(--muted); }
-        .val-ok { color: var(--green); font-family: var(--font-mono); }
-
-        input, select, button { 
-            width: 100%; background: var(--surface2); border: 1px solid rgba(255,255,255,0.1);
-            color: white; padding: 12px; border-radius: 8px; font-size: 14px; outline: none;
-        }
-        
-        .btn-primary { background: var(--accent); color: var(--bg); font-weight: bold; border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; }
-        .btn-outline { background: transparent; border: 1px solid var(--accent); color: var(--accent); }
-        
-        .grid-freq { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-bottom: 10px; }
-        .grid-freq button { padding: 8px; font-size: 11px; color: var(--muted); }
-        .grid-freq button.active { border-color: var(--accent); color: var(--accent); background: rgba(0,212,255,0.1); }
-
-        .countdown { font-family: var(--font-mono); font-size: 32px; color: var(--accent2); text-align: center; margin: 15px 0; }
-        .cd-label { text-align: center; font-size: 10px; color: var(--muted); text-transform: uppercase; }
-
-        #toasts { position: fixed; bottom: 20px; right: 20px; }
-    </style>
+  <meta charset="UTF-8">
+  <title>Meu App PWA</title>
+  <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <div class="wrapper">
-        <header>
-            <h1>🚢 Monitor de Navios</h1>
-            <div class="subtitle">Alertas de saída portuária</div>
-        </header>
+  <h1>Meu App com Service Worker 🚀</h1>
+  <p>Teste offline depois de carregar uma vez.</p>
 
-        <section class="card">
-            <div class="card-title">Diagnóstico do sistema</div>
-            <div class="diag-box">
-                <div class="diag-row"><span>Notification API</span><span class="val-ok" id="d-api">Suportada</span></div>
-                <div class="diag-row"><span>Permissão atual</span><span class="val-ok" style="color:var(--accent2)" id="d-perm">Aguardando</span></div>
-            </div>
-            <div style="display:flex; gap:10px;">
-                <button class="btn-primary" onclick="solicitarPermissao()">🔔 Solicitar permissão</button>
-                <button class="btn-outline" onclick="testarNotificacao()">🧪 Testar agora</button>
-            </div>
-        </section>
+  <button id="btn">Clique aqui</button>
 
-        <section class="card">
-            <div class="card-title">Navios monitorados</div>
-            <input type="text" id="ship-name" placeholder="Nome do navio (ex: MSC OSCAR)" style="margin-bottom:10px;">
-            <div style="display:flex; gap:10px; margin-bottom:10px;">
-                <select id="port-type" style="flex:1;"><option>Porto de origem</option></select>
-                <input type="text" id="ship-port" placeholder="Nome do porto" style="flex:1;">
-            </div>
-            <button class="btn-primary" onclick="addShip()">+ Adicionar navio</button>
-        </section>
-
-        <section class="card">
-            <div class="card-title">Frequência de verificação</div>
-            <div class="grid-freq">
-                <button>1 min</button><button>10 min</button><button class="active">30 min</button><button>1 hora</button>
-                <button>6 horas</button><button>12 horas</button><button style="grid-column: span 2;">1x ao dia</button>
-            </div>
-            <input type="range" min="1" max="1440" value="1440">
-        </section>
-
-        <section class="card">
-            <div class="card-title">Alarme Diário</div>
-            <input type="time" id="alarm-time" value="09:00" style="width:auto; display:block; margin: 0 auto;">
-            <div class="countdown" id="cd">21:30:07</div>
-            <div class="cd-label">Próximo disparo</div>
-        </section>
-
-        <div style="display:flex; gap:10px;">
-            <button class="btn-primary" id="btn-start" onclick="startMonitor()">▶ Iniciar</button>
-            <button class="btn-outline" style="border-color:var(--muted); color:var(--muted)">■ Parar</button>
-            <button class="btn-outline">🔔 Testar</button>
-        </div>
-    </div>
-    <script src="script.js"></script>
+  <script src="script.js"></script>
 </body>
 </html>
