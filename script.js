@@ -1,7 +1,7 @@
 let ships = JSON.parse(localStorage.getItem("ships")) || [];
 let futureShips = JSON.parse(localStorage.getItem("futureShips")) || [];
 
-let freq = localStorage.getItem("freq") || 1440;
+let freq = 1440;
 let monitor = null;
 
 let lastTriggerTime = 0;
@@ -9,269 +9,176 @@ let lastFixedTrigger = "";
 
 let COOLDOWN = freq * 60000;
 
-// ---------------- FUTUROS ----------------
-
-function addFutureShip(){
-
-  const name = document.getElementById('future-name').value.trim();
-  const port = document.getElementById('future-port').value.trim();
-  const obs = document.getElementById('future-obs').value.trim();
-  const date = document.getElementById('future-date').value;
-
-  if(!name || !date){
-    alert("Nome e data obrigatórios");
-    return;
-  }
-
-  futureShips.push({
-    id: Date.now(),
-    name,
-    port,
-    obs,
-    date
-  });
-
-  salvarFuture();
-  renderFuture();
-
-  log("Agendado: " + name + " para " + date);
+/* DASHBOARD */
+function updateDashboard(){
+  document.getElementById('dash-active').innerText = "Ativos: " + ships.filter(s=>!s.concluido).length;
+  document.getElementById('dash-future').innerText = "Futuros: " + futureShips.length;
+  document.getElementById('dash-done').innerText = "Concluídos: " + ships.filter(s=>s.concluido).length;
 }
 
-function checkFutureShips(){
+/* D+ */
+function calcDplus(date){
+  const start = new Date(date);
+  const now = new Date();
+  const diff = Math.floor((now - start) / (1000*60*60*24));
+  return diff;
+}
 
+/* RENDER */
+function renderShips(){
+
+  updateDashboard();
+
+  const ativos = ships.filter(s=>!s.concluido);
+  const concluidos = ships.filter(s=>s.concluido);
+
+  document.getElementById('ships-list').innerHTML = ativos.map(s=>{
+
+    const d = calcDplus(s.createdAt);
+    let cls="green";
+    if(d>=5) cls="yellow";
+    if(d>=6) cls="red";
+
+    return `
+    <div class="ship ${d>=6 ? 'pulse':''}">
+      <b>${s.name}</b> - ${s.port}
+      <span class="badge ${cls}">D+${d}</span>
+      <br><small>${s.obs||""}</small>
+
+      <div class="ship-actions">
+        <button onclick="finishShip(${s.id})">✔</button>
+        <button onclick="removeShip(${s.id})">🗑</button>
+      </div>
+    </div>`;
+  }).join('') || "Nenhum ativo";
+
+  document.getElementById('ships-done').innerHTML = concluidos.map(s=>`
+    <div class="ship" style="opacity:0.6">
+      <b>${s.name}</b>
+      <br><small>${s.obs||""}</small>
+      <br><small>${s.finishedAt}</small>
+    </div>
+  `).join('');
+}
+
+/* FUTUROS */
+function renderFuture(){
+  document.getElementById('future-list').innerHTML = futureShips.map(f=>`
+    <div class="ship">
+      <b>${f.name}</b> - ${f.port}
+      <br><small>${f.date}</small>
+    </div>
+  `).join('');
+}
+
+/* ADD */
+function addShip(){
+  ships.push({
+    id:Date.now(),
+    name:shipName.value,
+    port:shipPort.value,
+    obs:shipObs.value,
+    createdAt:new Date(),
+    concluido:false
+  });
+  save();
+}
+
+function addFutureShip(){
+  futureShips.push({
+    id:Date.now(),
+    name:futureName.value,
+    port:futurePort.value,
+    obs:futureObs.value,
+    date:futureDate.value
+  });
+  save();
+}
+
+/* MOVE */
+function checkFuture(){
   const today = new Date().toISOString().split("T")[0];
 
-  futureShips.forEach(f => {
+  futureShips.forEach(f=>{
     if(f.date <= today){
-
       ships.push({
-        id: Date.now(),
-        name: f.name,
-        port: f.port,
-        obs: f.obs,
-        concluido:false,
-        lastNotified:0
+        ...f,
+        createdAt:new Date(),
+        concluido:false
       });
-
-      log("Navio ativado automaticamente: " + f.name);
     }
   });
 
-  futureShips = futureShips.filter(f => f.date > today);
-
-  salvarFuture();
-  salvarShips();
-  renderFuture();
-  renderShips();
+  futureShips = futureShips.filter(f=>f.date > today);
+  save();
 }
 
-function renderFuture(){
-
-  const el = document.getElementById('future-list');
-
-  el.innerHTML = futureShips.map(f => `
-    <div class="ship">
-      <b>${f.name}</b> - ${f.port || ""}
-      <br><small>${f.obs || ""}</small>
-      <br><small>Data: ${f.date}</small>
-    </div>
-  `).join('') || "Nenhum agendado";
-}
-
-// ---------------- NAVIOS ----------------
-
-function addShip(){
-  const name = document.getElementById('ship-name').value.trim();
-  const port = document.getElementById('ship-port').value.trim();
-  const obs = document.getElementById('ship-obs').value.trim();
-
-  if(!name){
-    alert("Digite o nome do navio");
-    return;
-  }
-
-  ships.push({
-    id: Date.now(),
-    name,
-    port,
-    obs,
-    concluido:false,
-    lastNotified:0
-  });
-
-  salvarShips();
-  renderShips();
-  log("Navio adicionado: " + name);
-}
-
-function renderShips(){
-
-  const ativos = ships.filter(s => !s.concluido);
-  const concluidos = ships.filter(s => s.concluido);
-
-  document.getElementById('ships-list').innerHTML = ativos.map(s => `
-    <div class="ship">
-      <b>${s.name}</b> - ${s.port || ""}
-      <br><small>${s.obs || ""}</small>
-
-      <button onclick="finishShip(${s.id})">✅</button>
-      <button onclick="removeShip(${s.id})">🗑</button>
-    </div>
-  `).join('') || "Nenhum ativo";
-
-  document.getElementById('ships-done').innerHTML = concluidos.map(s => `
-    <div class="ship" style="opacity:0.6">
-      <b>${s.name}</b> - ${s.port || ""}
-      <br><small>${s.obs || ""}</small>
-      <br><small>Finalizado em: ${s.finishedAt}</small>
-    </div>
-  `).join('') || "Nenhum concluído";
-}
-
+/* ACTIONS */
 function finishShip(id){
   let s = ships.find(x=>x.id==id);
-  s.concluido = true;
-  s.finishedAt = new Date().toLocaleString();
-  salvarShips();
-  renderShips();
-  log("Concluído: " + s.name);
+  s.concluido=true;
+  s.finishedAt=new Date().toLocaleString();
+  save();
 }
 
 function removeShip(id){
-  ships = ships.filter(s => s.id !== id);
-  salvarShips();
-  renderShips();
-  log("Navio removido");
+  ships = ships.filter(s=>s.id!=id);
+  save();
 }
 
-// ---------------- FREQUÊNCIA ----------------
-
-function setFrequency(val){
-  freq = parseInt(val);
-  COOLDOWN = freq * 60000;
-  localStorage.setItem("freq", freq);
-}
-
-// ---------------- MONITOR ----------------
-
-function startMonitor(){
-
-  if(monitor) return;
-
-  if(Notification.permission !== "granted"){
-    Notification.requestPermission();
+/* ALERT */
+function notify(s){
+  if(Notification.permission==="granted"){
+    new Notification(s.name,{body:s.obs||""});
   }
-
-  monitor = setInterval(()=>{
-    checkFutureShips();
-    checkTimes();
-  },1000);
-
-  log("Monitor iniciado");
 }
 
-function stopMonitor(){
-  clearInterval(monitor);
-  monitor = null;
-  log("Monitor parado");
-}
-
-// ---------------- ALERTAS ----------------
-
+/* CHECK */
 function checkTimes(){
 
   const now = new Date();
   const nowMs = now.getTime();
 
-  // 🔁 INTERVALO
   if(nowMs - lastTriggerTime >= COOLDOWN){
-
-    const ativos = ships.filter(s => !s.concluido);
-
-    if(ativos.length > 0){
-      ativos.forEach(s => notify(s));
-      lastTriggerTime = nowMs;
-      log("Disparo por frequência");
-    }
+    ships.filter(s=>!s.concluido).forEach(notify);
+    lastTriggerTime = nowMs;
   }
 
-  // ⏰ HORÁRIO FIXO
   const current = now.toTimeString().slice(0,5);
-  const fixed = document.getElementById('fixed-time')?.value;
+  const fixed = document.getElementById('fixed-time').value;
 
-  if(fixed && current === fixed && lastFixedTrigger !== now.toDateString()){
-
-    const ativos = ships.filter(s => !s.concluido);
-
-    if(ativos.length > 0){
-      ativos.forEach(s => notify(s));
-      lastFixedTrigger = now.toDateString();
-      log("Disparo por horário fixo: " + fixed);
-    }
+  if(current===fixed && lastFixedTrigger!==now.toDateString()){
+    ships.filter(s=>!s.concluido).forEach(notify);
+    lastFixedTrigger = now.toDateString();
   }
 }
 
-function notify(ship){
-
-  if(ship.lastNotified && (Date.now() - ship.lastNotified < COOLDOWN)){
-    return;
-  }
-
-  ship.lastNotified = Date.now();
-  salvarShips();
-
-  const msg = `Porto: ${ship.port || "-"} | Obs: ${ship.obs || "-"}`;
-
-  showToast(ship.name, msg);
-
-  if(Notification.permission === "granted"){
-    new Notification(ship.name, { body: msg });
+/* CONTROL */
+function startMonitor(){
+  if(!monitor){
+    Notification.requestPermission();
+    monitor=setInterval(()=>{
+      checkFuture();
+      checkTimes();
+      renderShips();
+    },1000);
   }
 }
 
-// ---------------- TOAST ----------------
-
-function showToast(title,msg){
-  const c = document.getElementById('toasts');
-  const t = document.createElement('div');
-  t.className = "toast";
-  t.innerHTML = `<b>${title}</b><br>${msg}`;
-  c.appendChild(t);
-  setTimeout(()=>t.remove(),5000);
+function stopMonitor(){
+  clearInterval(monitor);
+  monitor=null;
 }
 
-// ---------------- LOG ----------------
-
-function log(msg){
-  let logs = JSON.parse(localStorage.getItem("logs")) || [];
-  logs.push(new Date().toLocaleString()+" - "+msg);
-  localStorage.setItem("logs", JSON.stringify(logs));
-  renderLogs();
+/* SAVE */
+function save(){
+  localStorage.setItem("ships",JSON.stringify(ships));
+  localStorage.setItem("futureShips",JSON.stringify(futureShips));
+  renderShips();
+  renderFuture();
 }
 
-function renderLogs(){
-  const el = document.getElementById('log');
-  const logs = JSON.parse(localStorage.getItem("logs")) || [];
-  el.innerHTML = logs.reverse().map(l=>`<div>${l}</div>`).join('');
-}
-
-function clearLogs(){
-  localStorage.removeItem("logs");
-  renderLogs();
-}
-
-// ---------------- STORAGE ----------------
-
-function salvarShips(){
-  localStorage.setItem("ships", JSON.stringify(ships));
-}
-
-function salvarFuture(){
-  localStorage.setItem("futureShips", JSON.stringify(futureShips));
-}
-
-// ---------------- INIT ----------------
-
+/* INIT */
 renderShips();
 renderFuture();
-renderLogs();
+updateDashboard();
