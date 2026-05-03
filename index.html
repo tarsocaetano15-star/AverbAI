@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <title>Monitor de Navios</title>
 
-<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet"/>
 
 <style>
 :root{
@@ -33,6 +33,7 @@ body{
   padding:30px;
 }
 
+/* DASHBOARD */
 .dashboard{
   display:flex;
   gap:20px;
@@ -48,12 +49,14 @@ body{
   text-align:center;
 }
 
+/* GRID */
 .grid{
   display:grid;
   grid-template-columns: 1fr 1.3fr 1fr;
   gap:20px;
 }
 
+/* CARDS */
 .card{
   background:var(--card);
   border-radius:16px;
@@ -61,10 +64,7 @@ body{
   border:1px solid var(--border);
 }
 
-.card.center{
-  border:1px solid var(--accent);
-}
-
+/* NAVIOS */
 .ship{
   padding:10px;
   margin-top:10px;
@@ -77,31 +77,9 @@ body{
   position:absolute;
   right:10px;
   top:10px;
-  opacity:0;
 }
 
-.ship:hover .ship-actions{
-  opacity:1;
-}
-
-.badge{
-  font-size:11px;
-  padding:3px 6px;
-  border-radius:6px;
-  margin-left:6px;
-}
-
-.badge.green{background:rgba(16,185,129,0.2);color:var(--green);}
-.badge.yellow{background:rgba(245,158,11,0.2);color:var(--yellow);}
-.badge.red{background:rgba(239,68,68,0.2);color:var(--red);}
-
-/* 🔥 SCROLL CONCLUÍDOS */
-#ships-done{
-  max-height:300px;
-  overflow-y:auto;
-}
-
-input,select,button{
+input,button,select{
   width:100%;
   margin-top:6px;
   padding:8px;
@@ -115,16 +93,31 @@ button{
   cursor:pointer;
 }
 
-small{color:var(--muted);}
+/* SCROLL CONCLUÍDOS */
+#ships-done{
+  max-height:300px;
+  overflow-y:auto;
+}
+
+/* TOAST */
+#toast-container{
+  position:fixed;
+  bottom:20px;
+  right:20px;
+  z-index:9999;
+}
 </style>
 </head>
 
 <body>
 
+<div id="toast-container"></div>
+
 <div class="wrapper">
 
 <h1>🚢 Monitor de Navios</h1>
 
+<!-- DASHBOARD -->
 <div class="dashboard">
   <div class="dash-box" id="dash-active">Ativos: 0</div>
   <div class="dash-box" id="dash-future">Futuros: 0</div>
@@ -133,6 +126,7 @@ small{color:var(--muted);}
 
 <div class="grid">
 
+<!-- FUTUROS -->
 <div class="card">
 <h3>📅 Futuros</h3>
 
@@ -146,7 +140,8 @@ small{color:var(--muted);}
 <div id="future-list"></div>
 </div>
 
-<div class="card center">
+<!-- ATIVOS -->
+<div class="card">
 <h3>📍 Monitorando</h3>
 
 <input id="ship-name" placeholder="Nome">
@@ -158,6 +153,7 @@ small{color:var(--muted);}
 <div id="ships-list"></div>
 </div>
 
+<!-- CONCLUÍDOS -->
 <div class="card">
 <h3>✅ Concluídos</h3>
 <div id="ships-done"></div>
@@ -167,8 +163,10 @@ small{color:var(--muted);}
 
 <br>
 
+<!-- CONTROLE -->
 <div class="card">
-<select onchange="setFrequency(this.value)">
+
+<select onchange="freq=this.value">
 <option value="1">1 min</option>
 <option value="10">10 min</option>
 <option value="15">15 min</option>
@@ -176,13 +174,14 @@ small{color:var(--muted);}
 <option value="60">1 hora</option>
 <option value="360">6 horas</option>
 <option value="720">12 horas</option>
-<option value="1440">1x ao dia</option>
+<option value="1440" selected>1x ao dia</option>
 </select>
 
 <input type="time" id="fixed-time" value="09:00">
 
-<button onclick="startMonitor()">▶ Iniciar</button>
-<button onclick="stopMonitor()">⏹ Parar</button>
+<button onclick="startMonitor()">▶ Iniciar Monitoramento</button>
+<button onclick="stopMonitor()">⏹ Parar Monitoramento</button>
+
 </div>
 
 </div>
