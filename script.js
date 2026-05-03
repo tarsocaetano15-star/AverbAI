@@ -22,11 +22,11 @@ function renderShips(){
   const el = document.getElementById('ships-list');
 
   el.innerHTML = ships.map(s => `
-    <div class="card">
+    <div class="ship">
       ${s.name} - ${s.port}
       <br>
-      <button onclick="startShip(${s.id})">▶ Iniciar</button>
-      <button onclick="stopShip(${s.id})">⏹ Concluir</button>
+      <button onclick="startShip(${s.id})">▶</button>
+      <button onclick="stopShip(${s.id})">⏹</button>
     </div>
   `).join('');
 }
@@ -40,27 +40,32 @@ function startShip(id){
 function stopShip(id){
   let s = ships.find(x=>x.id==id);
   s.ativo = false;
-  log("Finalizado: " + s.name);
+  log("Parado: " + s.name);
 }
 
 // HORÁRIOS
 function addTime(){
-  const t = document.getElementById('new-time').value;
-  times.push(t);
-  renderTimes();
+  const t = document.getElementById('alarm-time').value;
+
+  if(!times.includes(t)){
+    times.push(t);
+    renderTimes();
+    log("Horário adicionado: " + t);
+  }
 }
 
 function renderTimes(){
   const el = document.getElementById('time-list');
-
-  el.innerHTML = times.map(t => `
-    <div>${t}</div>
-  `).join('');
+  el.innerHTML = times.map(t => `<div>${t}</div>`).join('');
 }
 
 // MONITOR
 function startMonitor(){
   if(monitor) return;
+
+  if(Notification.permission !== "granted"){
+    Notification.requestPermission();
+  }
 
   monitor = setInterval(checkTimes, 1000);
   log("Monitor iniciado");
@@ -85,10 +90,14 @@ function checkTimes(){
 
 // NOTIFICAÇÃO
 function notify(ship){
+
   showToast("🚢 "+ship.name, ship.port);
 
   if(Notification.permission === "granted"){
-    new Notification(ship.name, { body: ship.port });
+    new Notification(ship.name, {
+      body: ship.port,
+      icon: "https://cdn-icons-png.flaticon.com/512/2040/2040061.png"
+    });
   }
 }
 
@@ -101,14 +110,18 @@ function showToast(title,msg){
   t.innerHTML = `<b>${title}</b><br>${msg}`;
 
   c.appendChild(t);
+
   setTimeout(()=>t.remove(),5000);
 }
 
 // LOG
 function log(msg){
   let logs = JSON.parse(localStorage.getItem("logs")) || [];
+
   logs.push(new Date().toLocaleString()+" - "+msg);
+
   localStorage.setItem("logs", JSON.stringify(logs));
+
   renderLogs();
 }
 
