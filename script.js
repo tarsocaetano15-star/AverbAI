@@ -1,122 +1,115 @@
 let ships = JSON.parse(localStorage.getItem("ships")) || [];
 let futureShips = JSON.parse(localStorage.getItem("futureShips")) || [];
 
-let monitor = null;
 let freq = 1440;
-let lastTrigger = 0;
-let lastFixed = "";
+let monitor = null;
 
-/* ADD NAVIO */
-function addShip(){
+let lastTriggerTime = 0;
+let lastFixedTrigger = "";
 
-  const name = document.getElementById("shipName").value.trim();
-  const port = document.getElementById("shipPort").value.trim();
-  const obs = document.getElementById("shipObs").value.trim();
+let COOLDOWN = freq * 60000;
 
-  if(!name){
-    alert("Digite o nome");
-    return;
-  }
-
-  ships.push({
-    id:Date.now(),
-    name,
-    port,
-    obs,
-    createdAt:new Date(),
-    concluido:false
-  });
-
-  clearInputs();
-  save();
+/* DASHBOARD */
+function updateDashboard(){
+  document.getElementById('dash-active').innerText = "Ativos: " + ships.filter(s=>!s.concluido).length;
+  document.getElementById('dash-future').innerText = "Futuros: " + futureShips.length;
+  document.getElementById('dash-done').innerText = "Concluídos: " + ships.filter(s=>s.concluido).length;
 }
 
-/* ADD FUTURO */
-function addFutureShip(){
-
-  const name = document.getElementById("futureName").value.trim();
-  const port = document.getElementById("futurePort").value.trim();
-  const obs = document.getElementById("futureObs").value.trim();
-  const date = document.getElementById("futureDate").value;
-
-  if(!name || !date){
-    alert("Nome e data obrigatórios");
-    return;
-  }
-
-  futureShips.push({
-    id:Date.now(),
-    name,
-    port,
-    obs,
-    date
-  });
-
-  save();
+/* D+ */
+function calcDplus(date){
+  const start = new Date(date);
+  const now = new Date();
+  return Math.floor((now - start) / (1000*60*60*24));
 }
 
 /* RENDER */
-function render(){
+function renderShips(){
 
-  // ativos
+  updateDashboard();
+
   const ativos = ships.filter(s=>!s.concluido);
+  const concluidos = ships.filter(s=>s.concluido);
 
-  document.getElementById("ships-list").innerHTML = ativos.map(s=>`
+  document.getElementById('ships-list').innerHTML = ativos.map(s=>{
+    const d = calcDplus(s.createdAt);
+    let cls="green";
+    if(d>=5) cls="yellow";
+    if(d>=6) cls="red";
+
+    return `
     <div class="ship">
       <b>${s.name}</b> - ${s.port}
+      <span class="badge ${cls}">D+${d}</span>
       <br><small>${s.obs||""}</small>
 
       <div class="ship-actions">
         <button onclick="finishShip(${s.id})">✔</button>
         <button onclick="removeShip(${s.id})">🗑</button>
       </div>
-    </div>
-  `).join('') || "Nenhum ativo";
+    </div>`;
+  }).join('') || "Nenhum ativo";
 
-  // concluídos
-  document.getElementById("ships-done").innerHTML = ships.filter(s=>s.concluido).map(s=>`
-    <div class="ship" style="opacity:0.5">
-      ${s.name}
+  document.getElementById('ships-done').innerHTML = concluidos.map(s=>`
+    <div class="ship" style="opacity:0.6">
+      <b>${s.name}</b>
+      <br><small>${s.obs||""}</small>
       <br><small>${s.finishedAt}</small>
     </div>
   `).join('');
+}
 
-  // futuros
-  document.getElementById("future-list").innerHTML = futureShips.map(f=>`
+/* FUTUROS */
+function renderFuture(){
+  document.getElementById('future-list').innerHTML = futureShips.map(f=>`
     <div class="ship">
-      ${f.name} - ${f.date}
+      <b>${f.name}</b> - ${f.port}
+      <br><small>${f.date}</small>
     </div>
   `).join('');
 }
 
-/* SALVAR */
-function save(){
-  localStorage.setItem("ships",JSON.stringify(ships));
-  localStorage.setItem("futureShips",JSON.stringify(futureShips));
-  render();
-}
+/* ADD */
+function addShip(){
+  const name = document.getElementById("ship-name").value.trim();
+  const port = document.getElementById("ship-port").value.trim();
+  const obs  = document.getElementById("ship-obs").value.trim();
 
-/* LIMPAR INPUT */
-function clearInputs(){
-  shipName.value="";
-  shipPort.value="";
-  shipObs.value="";
-}
+  if(!name) return alert("Digite o nome do navio");
 
-/* AÇÕES */
-function finishShip(id){
-  let s = ships.find(x=>x.id==id);
-  s.concluido=true;
-  s.finishedAt=new Date().toLocaleString();
+  ships.push({
+    id:Date.now(),
+    name, port, obs,
+    createdAt:new Date(),
+    concluido:false
+  });
+
+  document.getElementById("ship-name").value="";
+  document.getElementById("ship-port").value="";
+  document.getElementById("ship-obs").value="";
+
   save();
 }
 
-function removeShip(id){
-  ships = ships.filter(s=>s.id!=id);
+function addFutureShip(){
+  const name = document.getElementById("future-name").value.trim();
+  const port = document.getElementById("future-port").value.trim();
+  const obs  = document.getElementById("future-obs").value.trim();
+  const date = document.getElementById("future-date").value;
+
+  if(!name || !date) return alert("Nome e data obrigatórios");
+
+  futureShips.push({ id:Date.now(), name, port, obs, date });
+
+  document.getElementById("future-name").value="";
+  document.getElementById("future-port").value="";
+  document.getElementById("future-obs").value="";
+  document.getElementById("future-date").value="";
+
   save();
 }
 
-/* FUTURO → ATIVO */
+/* MOVE */
 function checkFuture(){
   const today = new Date().toISOString().split("T")[0];
 
@@ -133,7 +126,20 @@ function checkFuture(){
   futureShips = futureShips.filter(f=>f.date > today);
 }
 
-/* NOTIFICAÇÃO */
+/* ACTIONS */
+function finishShip(id){
+  let s = ships.find(x=>x.id==id);
+  s.concluido=true;
+  s.finishedAt=new Date().toLocaleString();
+  save();
+}
+
+function removeShip(id){
+  ships = ships.filter(s=>s.id!=id);
+  save();
+}
+
+/* ALERT */
 function notify(s){
   if(Notification.permission==="granted"){
     new Notification(s.name,{body:s.obs||""});
@@ -141,51 +147,57 @@ function notify(s){
 }
 
 /* FREQUÊNCIA */
-function setFrequency(v){
-  freq = parseInt(v);
+function setFrequency(value){
+  freq = parseInt(value);
+  COOLDOWN = freq * 60000;
 }
 
 /* CHECK */
-function check(){
+function checkTimes(){
 
-  const now = Date.now();
+  const now = new Date();
+  const nowMs = now.getTime();
 
-  // frequência
-  if(now - lastTrigger >= freq*60000){
+  if(nowMs - lastTriggerTime >= COOLDOWN){
     ships.filter(s=>!s.concluido).forEach(notify);
-    lastTrigger = now;
+    lastTriggerTime = nowMs;
   }
 
-  // horário fixo
-  const current = new Date().toTimeString().slice(0,5);
-  const fixed = document.getElementById("fixed-time").value;
+  const current = now.toTimeString().slice(0,5);
+  const fixed = document.getElementById('fixed-time').value;
 
-  if(current===fixed && lastFixed !== new Date().toDateString()){
+  if(current===fixed && lastFixedTrigger!==now.toDateString()){
     ships.filter(s=>!s.concluido).forEach(notify);
-    lastFixed = new Date().toDateString();
+    lastFixedTrigger = now.toDateString();
   }
 }
 
-/* CONTROLE */
+/* CONTROL */
 function startMonitor(){
-
-  if(monitor) return;
-
-  Notification.requestPermission();
-
-  monitor = setInterval(()=>{
-    checkFuture();
-    check();
-  },1000);
-
-  alert("Monitor iniciado");
+  if(!monitor){
+    Notification.requestPermission();
+    monitor=setInterval(()=>{
+      checkFuture();
+      checkTimes();
+      renderShips();
+    },1000);
+  }
 }
 
 function stopMonitor(){
   clearInterval(monitor);
-  monitor = null;
-  alert("Monitor parado");
+  monitor=null;
+}
+
+/* SAVE */
+function save(){
+  localStorage.setItem("ships",JSON.stringify(ships));
+  localStorage.setItem("futureShips",JSON.stringify(futureShips));
+  renderShips();
+  renderFuture();
 }
 
 /* INIT */
-render();
+renderShips();
+renderFuture();
+updateDashboard();
