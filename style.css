@@ -1,29 +1,31 @@
-:root {
- --bg:#0a0f1e;
- --surface:#111827;
- --surface2:#1a2236;
- --accent:#00d4ff;
- --text:#e2e8f0;
- --muted:#64748b;
-}
-
 body {
- background:var(--bg);
- color:var(--text);
- font-family:'DM Sans',sans-serif;
- padding:2rem;
+  background:#0a0f1e;
+  color:#fff;
+  font-family:Arial;
 }
 
 .card {
- background:var(--surface);
- padding:1rem;
- border-radius:12px;
- margin-bottom:1rem;
+  background:#111827;
+  padding:15px;
+  margin:10px;
+  border-radius:10px;
 }
 
 button {
- background:var(--accent);
- border:none;
- padding:10px;
- cursor:pointer;
+  margin-top:5px;
+  padding:8px;
+  cursor:pointer;
+}
+
+#toasts {
+  position:fixed;
+  bottom:20px;
+  right:20px;
+}
+
+.toast {
+  background:#1e293b;
+  padding:10px;
+  margin-top:5px;
+  border-left:4px solid cyan;
 }
