@@ -1,119 +1,73 @@
-// REGISTRO DO SERVICE WORKER COM CAMINHO PARA GITHUB
-if ('serviceWorker' in navigator) {
-    navigator.serviceWorker.register('./sw.js', { scope: './' }).then(reg => {
-        console.log('Service Worker Registrado!');
-    }).catch(err => console.log('Erro ao registrar SW:', err));
-}
-
-let monitoredShips = [];
-let lastFreqCheck = Date.now();
-
-// O "Motor" que checa o tempo a cada segundo
-setInterval(monitorEngine, 1000);
-
-async function solicitarPermissao() {
-    const p = await Notification.requestPermission();
-    if (p === "granted") {
-        document.getElementById('diag-text').innerHTML = "✅ Notificações Ativas";
-        document.getElementById('btn-perm').style.display = "none";
-        dispararAlertaReal("Sistema Ativo", "As notificações aparecerão agora.");
-    }
-}
+let ships = [];
 
 function addShip() {
     const name = document.getElementById('ship-name').value;
     const port = document.getElementById('ship-port').value;
-    const alarm = document.getElementById('alarm-time').value;
-
-    if (!name || !alarm) return alert("Preencha Nome e Horário!");
-
-    const target = new Date();
-    target.setDate(target.getDate() + 6); // Regra D+6
 
     const ship = {
         id: Date.now(),
-        name: name.toUpperCase(),
-        port: port || "Não informado",
-        alarmTime: alarm,
-        targetDate: target.toDateString(),
-        displayDate: target.toLocaleDateString('pt-BR'),
-        active: true
+        name,
+        port,
+        ativo: false
     };
 
-    monitoredShips.push(ship);
+    ships.push(ship);
     renderList();
-    dispararAlertaReal("Monitoramento Iniciado", `Navio ${ship.name} agendado para ${ship.displayDate}`);
 }
 
 function renderList() {
     const container = document.getElementById('list-container');
-    container.innerHTML = monitoredShips.map(s => `
-      <div class="ship-monitor-card">
-        <b>NAVIO: ${s.name}</b><br>
-        <small>PORTO: ${s.port}</small>
-        <span class="deadline-info">🔔 ALERTA EM: ${s.displayDate} às ${s.alarmTime}</span>
-        <button class="btn-stop" onclick="removeShip(${s.id})">PARAR MONITORAMENTO</button>
-      </div>
+
+    container.innerHTML = ships.map(s => `
+        <div class="card">
+            <b>${s.name}</b> - ${s.port}
+            <br>
+            <button onclick="startShip(${s.id})">▶ Iniciar</button>
+            <button onclick="stopShip(${s.id})">⏹ Concluir</button>
+        </div>
     `).join('');
 }
 
-function removeShip(id) {
-    monitoredShips = monitoredShips.filter(s => s.id !== id);
-    renderList();
+function startShip(id) {
+    const ship = ships.find(s => s.id === id);
+    ship.ativo = true;
+    log("Iniciado: " + ship.name);
 }
 
-function setFreq(min, btn) {
-    document.getElementById('freq-val').value = min;
-    document.querySelectorAll('.fq-btn').forEach(b => b.classList.remove('on'));
-    btn.classList.add('on');
+function stopShip(id) {
+    const ship = ships.find(s => s.id === id);
+    ship.ativo = false;
+    log("Finalizado: " + ship.name);
 }
 
-function monitorEngine() {
-    const agora = new Date();
-    const horaAgora = agora.getHours().toString().padStart(2, '0') + ":" + agora.getMinutes().toString().padStart(2, '0');
+async function ativarPush() {
+    const permission = await Notification.requestPermission();
 
-    // 1. Verificar prazos individuais
-    monitoredShips.forEach(s => {
-        if (s.active && agora.toDateString() === s.targetDate && horaAgora === s.alarmTime) {
-            dispararAlertaReal(`🚢 PRAZO ATINGIDO: ${s.name}`, `O prazo D+6 para ${s.port} venceu.`);
-            s.active = false; 
-        }
+    if (permission !== "granted") {
+        alert("Permissão negada");
+        return;
+    }
+
+    const token = await messaging.getToken({
+        vapidKey: "SUA_VAPID_KEY"
     });
 
-    // 2. Frequência Global
-    const fMin = parseInt(document.getElementById('freq-val').value);
-    if (agora.getTime() - lastFreqCheck >= fMin * 60000) {
-        lastFreqCheck = agora.getTime();
-        if (monitoredShips.length > 0) {
-            dispararAlertaReal("Monitor Ativo", `Acompanhando ${monitoredShips.length} navios.`);
-        }
-    }
+    console.log("TOKEN:", token);
 }
 
-function dispararAlertaReal(titulo, corpo) {
-    // 1. Toast Interno (Sempre aparece)
-    const t = document.createElement('div');
-    t.className = 'toast';
-    t.innerHTML = `<b>${titulo}</b><br>${corpo}`;
-    document.getElementById('toasts').appendChild(t);
-    setTimeout(() => t.remove(), 7000);
+function log(msg) {
+    let logs = JSON.parse(localStorage.getItem("logs")) || [];
+    logs.push(new Date().toLocaleString() + " - " + msg);
 
-    // 2. Notificação de Sistema (Fora da aba)
-    if (Notification.permission === 'granted') {
-        // Tenta via Service Worker primeiro (Melhor para aba fechada/Excel)
-        if (navigator.serviceWorker.controller) {
-            navigator.serviceWorker.controller.postMessage({
-                type: 'ALERTA_SISTEMA',
-                titulo: titulo,
-                corpo: corpo
-            });
-        } else {
-            // Plano B: Notificação direta se o SW ainda não estiver pronto
-            new Notification(titulo, { 
-                body: corpo, 
-                icon: 'https://cdn-icons-png.flaticon.com/512/2040/2040061.png',
-                requireInteraction: true 
-            });
-        }
-    }
+    localStorage.setItem("logs", JSON.stringify(logs));
+    renderLogs();
 }
+
+function renderLogs() {
+    const container = document.getElementById('historico');
+    const logs = JSON.parse(localStorage.getItem("logs")) || [];
+
+    container.innerHTML = logs.reverse().map(l => `<div>${l}</div>`).join('');
+}
+
+renderLogs();
