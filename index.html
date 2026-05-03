@@ -8,9 +8,6 @@
 <link rel="stylesheet" href="style.css">
 <link rel="manifest" href="manifest.json">
 
-<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-messaging-compat.js"></script>
-<script src="firebase-config.js"></script>
 </head>
 
 <body>
@@ -18,31 +15,30 @@
 <div id="toasts"></div>
 
 <div class="wrapper">
-<h1>🚢 MONITOR DE NAVIOS v5</h1>
 
-<!-- NAVIOS -->
+<h1>🚢 Monitor de Navios</h1>
+
 <div class="card">
 <input type="text" id="ship-name" placeholder="Nome do navio">
 <input type="text" id="ship-port" placeholder="Porto">
-<button onclick="addShip()">+ Adicionar</button>
+<button onclick="addShip()">+ Adicionar Navio</button>
+
 <div id="ships-list"></div>
 </div>
 
-<!-- HORÁRIOS -->
 <div class="card">
-<h3>⏰ Horários de Alerta</h3>
-<input type="time" id="new-time">
+<h3>⏰ Horários</h3>
+<input type="time" id="alarm-time">
 <button onclick="addTime()">+ Adicionar horário</button>
+
 <div id="time-list"></div>
 </div>
 
-<!-- STATUS -->
 <div class="card">
 <button onclick="startMonitor()">▶ Iniciar Monitoramento</button>
 <button onclick="stopMonitor()">⏹ Parar Monitoramento</button>
 </div>
 
-<!-- HISTÓRICO -->
 <div class="card">
 <h3>📜 Histórico</h3>
 <div id="log"></div>
