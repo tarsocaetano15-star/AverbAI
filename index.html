@@ -1,47 +1,55 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-
-<title>Monitor de Navios PRO</title>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Monitor de Navios</title>
 
 <link rel="stylesheet" href="style.css">
 <link rel="manifest" href="manifest.json">
 
-<link href="https://fonts.googleapis.com/css2?family=Space+Mono&family=DM+Sans&display=swap" rel="stylesheet">
-
 <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-messaging-compat.js"></script>
-
 <script src="firebase-config.js"></script>
 </head>
 
 <body>
 
+<div id="toasts"></div>
+
 <div class="wrapper">
-<h1>🚢 MONITOR DE NAVIOS v4</h1>
+<h1>🚢 MONITOR DE NAVIOS v5</h1>
 
+<!-- NAVIOS -->
 <div class="card">
-<div id="diag-text">Notificações</div>
-<button onclick="ativarPush()">🔔 Ativar Push Real</button>
-</div>
-
-<div class="card">
-<input type="text" id="ship-name" placeholder="Nome do Navio">
+<input type="text" id="ship-name" placeholder="Nome do navio">
 <input type="text" id="ship-port" placeholder="Porto">
-<button onclick="addShip()">+ Adicionar Navio</button>
-<div id="list-container"></div>
+<button onclick="addShip()">+ Adicionar</button>
+<div id="ships-list"></div>
 </div>
 
+<!-- HORÁRIOS -->
 <div class="card">
-<div class="label-accent">📜 Histórico</div>
-<div id="historico"></div>
+<h3>⏰ Horários de Alerta</h3>
+<input type="time" id="new-time">
+<button onclick="addTime()">+ Adicionar horário</button>
+<div id="time-list"></div>
+</div>
+
+<!-- STATUS -->
+<div class="card">
+<button onclick="startMonitor()">▶ Iniciar Monitoramento</button>
+<button onclick="stopMonitor()">⏹ Parar Monitoramento</button>
+</div>
+
+<!-- HISTÓRICO -->
+<div class="card">
+<h3>📜 Histórico</h3>
+<div id="log"></div>
 </div>
 
 </div>
 
 <script src="script.js"></script>
-
 </body>
 </html>
