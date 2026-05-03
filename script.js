@@ -7,6 +7,24 @@ let monitor = null;
 let lastTriggerTime = 0;
 let lastFixedTrigger = "";
 
+/* TOAST */
+function showToast(msg){
+  const container = document.getElementById("toast-container");
+
+  const t = document.createElement("div");
+  t.style.background="#1e293b";
+  t.style.color="white";
+  t.style.padding="12px";
+  t.style.marginTop="10px";
+  t.style.borderRadius="8px";
+  t.style.boxShadow="0 0 10px rgba(0,0,0,0.5)";
+  t.innerText = msg;
+
+  container.appendChild(t);
+
+  setTimeout(()=>t.remove(),4000);
+}
+
 /* DASHBOARD */
 function updateDashboard(){
   document.getElementById('dash-active').innerText = "Ativos: " + ships.filter(s=>!s.concluido).length;
@@ -32,14 +50,10 @@ function renderShips(){
   document.getElementById('ships-list').innerHTML = ativos.map(s=>{
     const d = calcDplus(s.createdAt);
 
-    let cls="green";
-    if(d>=5) cls="yellow";
-    if(d>=6) cls="red";
-
     return `
-    <div class="ship ${d>=6 ? 'pulse':''}">
+    <div class="ship">
       <b>${s.name}</b> - ${s.port}
-      <span class="badge ${cls}">D+${d}</span>
+      <span class="badge">D+${d}</span>
       <br><small>${s.obs||""}</small>
 
       <div class="ship-actions">
@@ -47,10 +61,10 @@ function renderShips(){
         <button onclick="removeShip(${s.id})">🗑</button>
       </div>
     </div>`;
-  }).join('') || "Nenhum ativo";
+  }).join('');
 
   document.getElementById('ships-done').innerHTML = concluidos.map(s=>`
-    <div class="ship" style="opacity:0.6">
+    <div class="ship">
       <b>${s.name}</b>
       <br><small>${s.obs||""}</small>
       <br><small>${s.finishedAt}</small>
@@ -83,12 +97,13 @@ function addShip(){
     obs,
     createdAt:new Date(),
     concluido:false,
-    lastNotified: null
+    lastNotified:null
   });
 
   save();
 }
 
+/* FUTUROS */
 function addFutureShip(){
   const name = document.getElementById("future-name").value;
   const port = document.getElementById("future-port").value;
@@ -135,6 +150,11 @@ function removeShip(id){
 
 /* 🔔 NOTIFICAÇÃO */
 function notify(s){
+
+  // TOAST
+  showToast(`🚢 ${s.name} - ${s.port}`);
+
+  // SISTEMA
   if(Notification.permission==="granted"){
     new Notification(s.name,{
       body:`${s.port}\n${s.obs||""}`
@@ -142,12 +162,10 @@ function notify(s){
   }
 }
 
-/* 🔥 ANTI-SPAM INTELIGENTE */
+/* ANTI-SPAM */
 function shouldNotify(ship){
   const today = new Date().toDateString();
-
   if(ship.lastNotified === today) return false;
-
   ship.lastNotified = today;
   return true;
 }
@@ -161,9 +179,7 @@ function checkTimes(){
   if(nowMs - lastTriggerTime >= freq * 60000){
 
     ships.filter(s=>!s.concluido).forEach(s=>{
-      if(shouldNotify(s)){
-        notify(s);
-      }
+      if(shouldNotify(s)) notify(s);
     });
 
     lastTriggerTime = nowMs;
@@ -175,9 +191,7 @@ function checkTimes(){
   if(current===fixed && lastFixedTrigger!==now.toDateString()){
 
     ships.filter(s=>!s.concluido).forEach(s=>{
-      if(shouldNotify(s)){
-        notify(s);
-      }
+      if(shouldNotify(s)) notify(s);
     });
 
     lastFixedTrigger = now.toDateString();
@@ -185,9 +199,11 @@ function checkTimes(){
 }
 
 /* CONTROL */
-function startMonitor(){
+async function startMonitor(){
 
-  Notification.requestPermission();
+  showToast("🚀 Monitor iniciado");
+
+  await Notification.requestPermission();
 
   if(monitor) return;
 
@@ -201,17 +217,9 @@ function startMonitor(){
 function stopMonitor(){
   clearInterval(monitor);
   monitor=null;
+  showToast("⛔ Monitor parado");
 }
 
 /* SAVE */
 function save(){
-  localStorage.setItem("ships",JSON.stringify(ships));
-  localStorage.setItem("futureShips",JSON.stringify(futureShips));
-  renderShips();
-  renderFuture();
-}
-
-/* INIT */
-renderShips();
-renderFuture();
-updateDashboard();
+  localStorage.setItem("ships
