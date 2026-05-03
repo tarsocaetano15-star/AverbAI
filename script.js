@@ -1,19 +1,27 @@
-let ships = [];
-let times = [];
+let ships = JSON.parse(localStorage.getItem("ships")) || [];
+let times = JSON.parse(localStorage.getItem("times")) || [];
 let monitor = null;
 
-// NAVIOS
+// CONTROLE DE DISPARO (evita spam)
+let lastTriggerMinute = "";
+
+// -------- NAVIOS --------
+
 function addShip(){
   const name = document.getElementById('ship-name').value;
   const port = document.getElementById('ship-port').value;
+  const obs = document.getElementById('ship-obs').value;
 
   ships.push({
     id: Date.now(),
     name,
     port,
-    ativo:false
+    obs,
+    ativo: false,
+    concluido: false
   });
 
+  salvarShips();
   renderShips();
   log("Navio adicionado: " + name);
 }
@@ -23,10 +31,15 @@ function renderShips(){
 
   el.innerHTML = ships.map(s => `
     <div class="ship">
-      ${s.name} - ${s.port}
+      <b>${s.name}</b> - ${s.port || ""}
       <br>
-      <button onclick="startShip(${s.id})">▶</button>
-      <button onclick="stopShip(${s.id})">⏹</button>
+      <small>${s.obs || ""}</small>
+
+      <div class="ship-actions">
+        <button onclick="startShip(${s.id})">▶</button>
+        <button onclick="stopShip(${s.id})">⏹</button>
+        <button onclick="finishShip(${s.id})">✅</button>
+      </div>
     </div>
   `).join('');
 }
@@ -34,21 +47,33 @@ function renderShips(){
 function startShip(id){
   let s = ships.find(x=>x.id==id);
   s.ativo = true;
+  salvarShips();
   log("Monitorando: " + s.name);
 }
 
 function stopShip(id){
   let s = ships.find(x=>x.id==id);
   s.ativo = false;
+  salvarShips();
   log("Parado: " + s.name);
 }
 
-// HORÁRIOS
+function finishShip(id){
+  let s = ships.find(x=>x.id==id);
+  s.ativo = false;
+  s.concluido = true;
+  salvarShips();
+  log("Concluído: " + s.name);
+}
+
+// -------- HORÁRIOS --------
+
 function addTime(){
   const t = document.getElementById('alarm-time').value;
 
   if(!times.includes(t)){
     times.push(t);
+    salvarTimes();
     renderTimes();
     log("Horário adicionado: " + t);
   }
@@ -59,8 +84,10 @@ function renderTimes(){
   el.innerHTML = times.map(t => `<div>${t}</div>`).join('');
 }
 
-// MONITOR
+// -------- MONITOR --------
+
 function startMonitor(){
+
   if(monitor) return;
 
   if(Notification.permission !== "granted"){
@@ -77,31 +104,47 @@ function stopMonitor(){
   log("Monitor parado");
 }
 
+// -------- CONTROLE INTELIGENTE (ANTI-SPAM) --------
+
 function checkTimes(){
+
+  if(!monitor) return; // PARA INSTANTÂNEO
+
   const now = new Date();
   const current = now.toTimeString().slice(0,5);
 
+  // EVITA REPETIR NO MESMO MINUTO
+  if(current === lastTriggerMinute) return;
+
   if(times.includes(current)){
-    ships.filter(s=>s.ativo).forEach(s=>{
-      notify(s);
-    });
+
+    ships
+      .filter(s => s.ativo && !s.concluido)
+      .forEach(s => notify(s));
+
+    lastTriggerMinute = current;
+    log("Alerta disparado às " + current);
   }
 }
 
-// NOTIFICAÇÃO
+// -------- NOTIFICAÇÃO --------
+
 function notify(ship){
 
-  showToast("🚢 "+ship.name, ship.port);
+  const msg = `${ship.port || ""} ${ship.obs || ""}`;
+
+  showToast("🚢 "+ship.name, msg);
 
   if(Notification.permission === "granted"){
     new Notification(ship.name, {
-      body: ship.port,
+      body: msg,
       icon: "https://cdn-icons-png.flaticon.com/512/2040/2040061.png"
     });
   }
 }
 
-// TOAST
+// -------- TOAST --------
+
 function showToast(title,msg){
   const c = document.getElementById('toasts');
 
@@ -114,7 +157,8 @@ function showToast(title,msg){
   setTimeout(()=>t.remove(),5000);
 }
 
-// LOG
+// -------- LOG --------
+
 function log(msg){
   let logs = JSON.parse(localStorage.getItem("logs")) || [];
 
@@ -132,4 +176,18 @@ function renderLogs(){
   el.innerHTML = logs.reverse().map(l=>`<div>${l}</div>`).join('');
 }
 
+// -------- STORAGE --------
+
+function salvarShips(){
+  localStorage.setItem("ships", JSON.stringify(ships));
+}
+
+function salvarTimes(){
+  localStorage.setItem("times", JSON.stringify(times));
+}
+
+// -------- INIT --------
+
+renderShips();
+renderTimes();
 renderLogs();
