@@ -1,10 +1,79 @@
 let ships = JSON.parse(localStorage.getItem("ships")) || [];
-let times = JSON.parse(localStorage.getItem("times")) || [];
-let freq = localStorage.getItem("freq") || 1440;
+let futureShips = JSON.parse(localStorage.getItem("futureShips")) || [];
 
+let freq = localStorage.getItem("freq") || 1440;
 let monitor = null;
 let lastTriggerTime = 0;
 let COOLDOWN = freq * 60000;
+
+// ---------------- FUTUROS ----------------
+
+function addFutureShip(){
+
+  const name = document.getElementById('future-name').value.trim();
+  const port = document.getElementById('future-port').value.trim();
+  const obs = document.getElementById('future-obs').value.trim();
+  const date = document.getElementById('future-date').value;
+
+  if(!name || !date){
+    alert("Nome e data obrigatórios");
+    return;
+  }
+
+  futureShips.push({
+    id: Date.now(),
+    name,
+    port,
+    obs,
+    date
+  });
+
+  salvarFuture();
+  renderFuture();
+
+  log("Agendado: " + name + " para " + date);
+}
+
+function checkFutureShips(){
+
+  const today = new Date().toISOString().split("T")[0];
+
+  futureShips.forEach(f => {
+    if(f.date <= today){
+
+      ships.push({
+        id: Date.now(),
+        name: f.name,
+        port: f.port,
+        obs: f.obs,
+        concluido:false,
+        lastNotified:0
+      });
+
+      log("Navio ativado automaticamente: " + f.name);
+    }
+  });
+
+  futureShips = futureShips.filter(f => f.date > today);
+
+  salvarFuture();
+  salvarShips();
+  renderFuture();
+  renderShips();
+}
+
+function renderFuture(){
+
+  const el = document.getElementById('future-list');
+
+  el.innerHTML = futureShips.map(f => `
+    <div class="ship">
+      <b>${f.name}</b> - ${f.port || ""}
+      <br><small>${f.obs || ""}</small>
+      <br><small>Data: ${f.date}</small>
+    </div>
+  `).join('') || "Nenhum agendado";
+}
 
 // ---------------- NAVIOS ----------------
 
@@ -29,15 +98,7 @@ function addShip(){
 
   salvarShips();
   renderShips();
-  limparInputs();
-
   log("Navio adicionado: " + name);
-}
-
-function limparInputs(){
-  document.getElementById('ship-name').value = "";
-  document.getElementById('ship-port').value = "";
-  document.getElementById('ship-obs').value = "";
 }
 
 function renderShips(){
@@ -50,17 +111,16 @@ function renderShips(){
       <b>${s.name}</b> - ${s.port || ""}
       <br><small>${s.obs || ""}</small>
 
-      <div class="ship-actions">
-        <button onclick="finishShip(${s.id})">✅</button>
-        <button onclick="removeShip(${s.id})">🗑</button>
-      </div>
+      <button onclick="finishShip(${s.id})">✅</button>
+      <button onclick="removeShip(${s.id})">🗑</button>
     </div>
-  `).join('') || "Nenhum navio";
+  `).join('') || "Nenhum ativo";
 
   document.getElementById('ships-done').innerHTML = concluidos.map(s => `
     <div class="ship" style="opacity:0.6">
       <b>${s.name}</b> - ${s.port || ""}
       <br><small>${s.obs || ""}</small>
+      <br><small>Finalizado em: ${s.finishedAt}</small>
     </div>
   `).join('') || "Nenhum concluído";
 }
@@ -68,6 +128,7 @@ function renderShips(){
 function finishShip(id){
   let s = ships.find(x=>x.id==id);
   s.concluido = true;
+  s.finishedAt = new Date().toLocaleString();
   salvarShips();
   renderShips();
   log("Concluído: " + s.name);
@@ -86,20 +147,18 @@ function setFrequency(val){
   freq = parseInt(val);
   COOLDOWN = freq * 60000;
   localStorage.setItem("freq", freq);
-  log("Frequência alterada: " + val + " min");
 }
 
 // ---------------- MONITOR ----------------
 
 function startMonitor(){
-
   if(monitor) return;
 
-  if(Notification.permission !== "granted"){
-    Notification.requestPermission();
-  }
+  monitor = setInterval(()=>{
+    checkFutureShips();
+    checkTimes();
+  },1000);
 
-  monitor = setInterval(checkTimes, 1000);
   log("Monitor iniciado");
 }
 
@@ -109,11 +168,9 @@ function stopMonitor(){
   log("Monitor parado");
 }
 
-// ---------------- CHECK ----------------
+// ---------------- ALERTA ----------------
 
 function checkTimes(){
-
-  if(!monitor) return;
 
   const now = Date.now();
 
@@ -126,11 +183,7 @@ function checkTimes(){
   ativos.forEach(s => notify(s));
 
   lastTriggerTime = now;
-
-  log("Disparo executado");
 }
-
-// ---------------- NOTIFICAÇÃO ----------------
 
 function notify(ship){
 
@@ -141,18 +194,12 @@ function notify(ship){
   ship.lastNotified = Date.now();
   salvarShips();
 
-  const msg = `
-Porto: ${ship.port || "-"}
-Obs: ${ship.obs || "-"}
-  `;
+  const msg = `Porto: ${ship.port || "-"} | Obs: ${ship.obs || "-"}`;
 
   showToast(ship.name, msg);
 
   if(Notification.permission === "granted"){
-    new Notification(ship.name, {
-      body: msg,
-      icon: "https://cdn-icons-png.flaticon.com/512/2040/2040061.png"
-    });
+    new Notification(ship.name, { body: msg });
   }
 }
 
@@ -160,13 +207,10 @@ Obs: ${ship.obs || "-"}
 
 function showToast(title,msg){
   const c = document.getElementById('toasts');
-
   const t = document.createElement('div');
   t.className = "toast";
   t.innerHTML = `<b>${title}</b><br>${msg}`;
-
   c.appendChild(t);
-
   setTimeout(()=>t.remove(),5000);
 }
 
@@ -174,18 +218,14 @@ function showToast(title,msg){
 
 function log(msg){
   let logs = JSON.parse(localStorage.getItem("logs")) || [];
-
   logs.push(new Date().toLocaleString()+" - "+msg);
-
   localStorage.setItem("logs", JSON.stringify(logs));
-
   renderLogs();
 }
 
 function renderLogs(){
   const el = document.getElementById('log');
   const logs = JSON.parse(localStorage.getItem("logs")) || [];
-
   el.innerHTML = logs.reverse().map(l=>`<div>${l}</div>`).join('');
 }
 
@@ -200,7 +240,12 @@ function salvarShips(){
   localStorage.setItem("ships", JSON.stringify(ships));
 }
 
+function salvarFuture(){
+  localStorage.setItem("futureShips", JSON.stringify(futureShips));
+}
+
 // ---------------- INIT ----------------
 
 renderShips();
+renderFuture();
 renderLogs();
