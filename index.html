@@ -95,6 +95,12 @@ body{
 .badge.yellow{background:rgba(245,158,11,0.2);color:var(--yellow);}
 .badge.red{background:rgba(239,68,68,0.2);color:var(--red);}
 
+/* 🔥 SCROLL CONCLUÍDOS */
+#ships-done{
+  max-height:300px;
+  overflow-y:auto;
+}
+
 input,select,button{
   width:100%;
   margin-top:6px;
@@ -127,7 +133,6 @@ small{color:var(--muted);}
 
 <div class="grid">
 
-<!-- FUTUROS -->
 <div class="card">
 <h3>📅 Futuros</h3>
 
@@ -141,7 +146,6 @@ small{color:var(--muted);}
 <div id="future-list"></div>
 </div>
 
-<!-- ATIVOS -->
 <div class="card center">
 <h3>📍 Monitorando</h3>
 
@@ -154,7 +158,6 @@ small{color:var(--muted);}
 <div id="ships-list"></div>
 </div>
 
-<!-- CONCLUÍDOS -->
 <div class="card">
 <h3>✅ Concluídos</h3>
 <div id="ships-done"></div>
@@ -173,7 +176,7 @@ small{color:var(--muted);}
 <option value="60">1 hora</option>
 <option value="360">6 horas</option>
 <option value="720">12 horas</option>
-<option value="1440" selected>1x ao dia</option>
+<option value="1440">1x ao dia</option>
 </select>
 
 <input type="time" id="fixed-time" value="09:00">
