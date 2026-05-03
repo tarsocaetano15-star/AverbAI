@@ -6,7 +6,6 @@ let monitor = null;
 
 let lastTriggerTime = 0;
 let lastFixedTrigger = "";
-
 let COOLDOWN = freq * 60000;
 
 /* DASHBOARD */
@@ -20,8 +19,7 @@ function updateDashboard(){
 function calcDplus(date){
   const start = new Date(date);
   const now = new Date();
-  const diff = Math.floor((now - start) / (1000*60*60*24));
-  return diff;
+  return Math.floor((now - start) / (1000*60*60*24));
 }
 
 /* RENDER */
@@ -73,29 +71,56 @@ function renderFuture(){
 
 /* ADD */
 function addShip(){
+
+  const name = document.getElementById("shipName").value.trim();
+  const port = document.getElementById("shipPort").value.trim();
+  const obs = document.getElementById("shipObs").value.trim();
+
+  if(!name){
+    alert("Digite o nome do navio");
+    return;
+  }
+
   ships.push({
     id:Date.now(),
-    name:shipName.value,
-    port:shipPort.value,
-    obs:shipObs.value,
+    name,
+    port,
+    obs,
     createdAt:new Date(),
     concluido:false
   });
+
+  document.getElementById("shipName").value="";
+  document.getElementById("shipPort").value="";
+  document.getElementById("shipObs").value="";
+
   save();
 }
 
 function addFutureShip(){
+
+  const name = document.getElementById("futureName").value.trim();
+  const port = document.getElementById("futurePort").value.trim();
+  const obs = document.getElementById("futureObs").value.trim();
+  const date = document.getElementById("futureDate").value;
+
+  if(!name || !date){
+    alert("Nome e data são obrigatórios");
+    return;
+  }
+
   futureShips.push({
     id:Date.now(),
-    name:futureName.value,
-    port:futurePort.value,
-    obs:futureObs.value,
-    date:futureDate.value
+    name,
+    port,
+    obs,
+    date
   });
+
   save();
 }
 
-/* MOVE */
+/* MOVE FUTURO → ATIVO */
 function checkFuture(){
   const today = new Date().toISOString().split("T")[0];
 
@@ -110,7 +135,6 @@ function checkFuture(){
   });
 
   futureShips = futureShips.filter(f=>f.date > today);
-  save();
 }
 
 /* ACTIONS */
@@ -126,7 +150,7 @@ function removeShip(id){
   save();
 }
 
-/* ALERT */
+/* NOTIFICAÇÃO */
 function notify(s){
   if(Notification.permission==="granted"){
     new Notification(s.name,{body:s.obs||""});
@@ -153,21 +177,26 @@ function checkTimes(){
   }
 }
 
-/* CONTROL */
+/* CONTROLE */
 function startMonitor(){
-  if(!monitor){
-    Notification.requestPermission();
-    monitor=setInterval(()=>{
-      checkFuture();
-      checkTimes();
-      renderShips();
-    },1000);
-  }
+
+  if(monitor) return;
+
+  Notification.requestPermission();
+
+  monitor=setInterval(()=>{
+    checkFuture();
+    checkTimes();
+    renderShips();
+  },1000);
+
+  alert("Monitoramento iniciado");
 }
 
 function stopMonitor(){
   clearInterval(monitor);
   monitor=null;
+  alert("Monitoramento parado");
 }
 
 /* SAVE */
@@ -176,6 +205,7 @@ function save(){
   localStorage.setItem("futureShips",JSON.stringify(futureShips));
   renderShips();
   renderFuture();
+  updateDashboard();
 }
 
 /* INIT */
