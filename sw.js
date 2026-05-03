@@ -1,21 +1,15 @@
-// Ativação imediata para o GitHub Pages
-self.addEventListener('install', event => {
-    self.skipWaiting();
+importScripts('https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js');
+importScripts('https://www.gstatic.com/firebasejs/10.7.1/firebase-messaging-compat.js');
+
+firebase.initializeApp({
+  messagingSenderId: "SEU_ID"
 });
 
-self.addEventListener('activate', event => {
-    event.waitUntil(clients.claim()); // Assume o controle da aba imediatamente
-});
+const messaging = firebase.messaging();
 
-// Ouve as mensagens do script principal e mostra o pop-up nativo
-self.addEventListener('message', event => {
-    if (event.data && event.data.type === 'ALERTA_SISTEMA') {
-        const options = {
-            body: event.data.corpo,
-            icon: 'https://cdn-icons-png.flaticon.com/512/2040/2040061.png',
-            requireInteraction: true,
-            tag: 'monitor-' + Date.now()
-        };
-        self.registration.showNotification(event.data.titulo, options);
-    }
+messaging.onBackgroundMessage(function(payload) {
+    self.registration.showNotification(payload.notification.title, {
+        body: payload.notification.body,
+        icon: payload.notification.icon
+    });
 });
