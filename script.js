@@ -1,73 +1,122 @@
 let ships = [];
+let times = [];
+let monitor = null;
 
-function addShip() {
-    const name = document.getElementById('ship-name').value;
-    const port = document.getElementById('ship-port').value;
+// NAVIOS
+function addShip(){
+  const name = document.getElementById('ship-name').value;
+  const port = document.getElementById('ship-port').value;
 
-    const ship = {
-        id: Date.now(),
-        name,
-        port,
-        ativo: false
-    };
+  ships.push({
+    id: Date.now(),
+    name,
+    port,
+    ativo:false
+  });
 
-    ships.push(ship);
-    renderList();
+  renderShips();
+  log("Navio adicionado: " + name);
 }
 
-function renderList() {
-    const container = document.getElementById('list-container');
+function renderShips(){
+  const el = document.getElementById('ships-list');
 
-    container.innerHTML = ships.map(s => `
-        <div class="card">
-            <b>${s.name}</b> - ${s.port}
-            <br>
-            <button onclick="startShip(${s.id})">▶ Iniciar</button>
-            <button onclick="stopShip(${s.id})">⏹ Concluir</button>
-        </div>
-    `).join('');
+  el.innerHTML = ships.map(s => `
+    <div class="card">
+      ${s.name} - ${s.port}
+      <br>
+      <button onclick="startShip(${s.id})">▶ Iniciar</button>
+      <button onclick="stopShip(${s.id})">⏹ Concluir</button>
+    </div>
+  `).join('');
 }
 
-function startShip(id) {
-    const ship = ships.find(s => s.id === id);
-    ship.ativo = true;
-    log("Iniciado: " + ship.name);
+function startShip(id){
+  let s = ships.find(x=>x.id==id);
+  s.ativo = true;
+  log("Monitorando: " + s.name);
 }
 
-function stopShip(id) {
-    const ship = ships.find(s => s.id === id);
-    ship.ativo = false;
-    log("Finalizado: " + ship.name);
+function stopShip(id){
+  let s = ships.find(x=>x.id==id);
+  s.ativo = false;
+  log("Finalizado: " + s.name);
 }
 
-async function ativarPush() {
-    const permission = await Notification.requestPermission();
+// HORÁRIOS
+function addTime(){
+  const t = document.getElementById('new-time').value;
+  times.push(t);
+  renderTimes();
+}
 
-    if (permission !== "granted") {
-        alert("Permissão negada");
-        return;
-    }
+function renderTimes(){
+  const el = document.getElementById('time-list');
 
-    const token = await messaging.getToken({
-        vapidKey: "SUA_VAPID_KEY"
+  el.innerHTML = times.map(t => `
+    <div>${t}</div>
+  `).join('');
+}
+
+// MONITOR
+function startMonitor(){
+  if(monitor) return;
+
+  monitor = setInterval(checkTimes, 1000);
+  log("Monitor iniciado");
+}
+
+function stopMonitor(){
+  clearInterval(monitor);
+  monitor = null;
+  log("Monitor parado");
+}
+
+function checkTimes(){
+  const now = new Date();
+  const current = now.toTimeString().slice(0,5);
+
+  if(times.includes(current)){
+    ships.filter(s=>s.ativo).forEach(s=>{
+      notify(s);
     });
-
-    console.log("TOKEN:", token);
+  }
 }
 
-function log(msg) {
-    let logs = JSON.parse(localStorage.getItem("logs")) || [];
-    logs.push(new Date().toLocaleString() + " - " + msg);
+// NOTIFICAÇÃO
+function notify(ship){
+  showToast("🚢 "+ship.name, ship.port);
 
-    localStorage.setItem("logs", JSON.stringify(logs));
-    renderLogs();
+  if(Notification.permission === "granted"){
+    new Notification(ship.name, { body: ship.port });
+  }
 }
 
-function renderLogs() {
-    const container = document.getElementById('historico');
-    const logs = JSON.parse(localStorage.getItem("logs")) || [];
+// TOAST
+function showToast(title,msg){
+  const c = document.getElementById('toasts');
 
-    container.innerHTML = logs.reverse().map(l => `<div>${l}</div>`).join('');
+  const t = document.createElement('div');
+  t.className = "toast";
+  t.innerHTML = `<b>${title}</b><br>${msg}`;
+
+  c.appendChild(t);
+  setTimeout(()=>t.remove(),5000);
+}
+
+// LOG
+function log(msg){
+  let logs = JSON.parse(localStorage.getItem("logs")) || [];
+  logs.push(new Date().toLocaleString()+" - "+msg);
+  localStorage.setItem("logs", JSON.stringify(logs));
+  renderLogs();
+}
+
+function renderLogs(){
+  const el = document.getElementById('log');
+  const logs = JSON.parse(localStorage.getItem("logs")) || [];
+
+  el.innerHTML = logs.reverse().map(l=>`<div>${l}</div>`).join('');
 }
 
 renderLogs();
