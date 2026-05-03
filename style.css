@@ -29,6 +29,12 @@ button {
   border-radius:8px;
 }
 
+.ship-actions {
+  margin-top:5px;
+  display:flex;
+  gap:5px;
+}
+
 #toasts {
   position:fixed;
   bottom:20px;
