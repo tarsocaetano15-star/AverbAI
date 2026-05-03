@@ -3,7 +3,10 @@ let futureShips = JSON.parse(localStorage.getItem("futureShips")) || [];
 
 let freq = localStorage.getItem("freq") || 1440;
 let monitor = null;
+
 let lastTriggerTime = 0;
+let lastFixedTrigger = "";
+
 let COOLDOWN = freq * 60000;
 
 // ---------------- FUTUROS ----------------
@@ -152,7 +155,12 @@ function setFrequency(val){
 // ---------------- MONITOR ----------------
 
 function startMonitor(){
+
   if(monitor) return;
+
+  if(Notification.permission !== "granted"){
+    Notification.requestPermission();
+  }
 
   monitor = setInterval(()=>{
     checkFutureShips();
@@ -168,21 +176,39 @@ function stopMonitor(){
   log("Monitor parado");
 }
 
-// ---------------- ALERTA ----------------
+// ---------------- ALERTAS ----------------
 
 function checkTimes(){
 
-  const now = Date.now();
+  const now = new Date();
+  const nowMs = now.getTime();
 
-  if(now - lastTriggerTime < COOLDOWN) return;
+  // 🔁 INTERVALO
+  if(nowMs - lastTriggerTime >= COOLDOWN){
 
-  const ativos = ships.filter(s => !s.concluido);
+    const ativos = ships.filter(s => !s.concluido);
 
-  if(ativos.length === 0) return;
+    if(ativos.length > 0){
+      ativos.forEach(s => notify(s));
+      lastTriggerTime = nowMs;
+      log("Disparo por frequência");
+    }
+  }
 
-  ativos.forEach(s => notify(s));
+  // ⏰ HORÁRIO FIXO
+  const current = now.toTimeString().slice(0,5);
+  const fixed = document.getElementById('fixed-time')?.value;
 
-  lastTriggerTime = now;
+  if(fixed && current === fixed && lastFixedTrigger !== now.toDateString()){
+
+    const ativos = ships.filter(s => !s.concluido);
+
+    if(ativos.length > 0){
+      ativos.forEach(s => notify(s));
+      lastFixedTrigger = now.toDateString();
+      log("Disparo por horário fixo: " + fixed);
+    }
+  }
 }
 
 function notify(ship){
