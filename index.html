@@ -1,15 +1,39 @@
-<!-- ATIVOS -->
-<div class="card center">
-<h3>📍 Monitorando</h3>
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Monitor de Navios</title>
 
-<input id="shipName" placeholder="Nome">
-<input id="shipPort" placeholder="Porto">
-<input id="shipObs" placeholder="Obs">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans&display=swap" rel="stylesheet"/>
 
-<button onclick="addShip()">Adicionar</button>
+<style>
+body{font-family:DM Sans;background:#0a0f1e;color:white;margin:0;padding:20px;}
+.wrapper{max-width:1400px;margin:auto;}
 
-<div id="ships-list"></div>
-</div>
+.grid{display:grid;grid-template-columns:1fr 1.3fr 1fr;gap:20px;}
+
+.card{background:#111827;padding:20px;border-radius:12px;}
+
+.ship{background:#1a2236;padding:10px;margin-top:10px;border-radius:8px;position:relative;}
+
+.ship-actions{position:absolute;right:10px;top:10px;opacity:0;}
+.ship:hover .ship-actions{opacity:1;}
+
+button{margin-top:5px;padding:8px;border:none;border-radius:6px;cursor:pointer;background:#00d4ff;}
+
+input{width:100%;margin-top:5px;padding:8px;border-radius:6px;border:none;}
+
+</style>
+</head>
+
+<body>
+
+<div class="wrapper">
+
+<h1>🚢 Monitor de Navios</h1>
+
+<div class="grid">
 
 <!-- FUTUROS -->
 <div class="card">
@@ -24,3 +48,51 @@
 
 <div id="future-list"></div>
 </div>
+
+<!-- ATIVOS -->
+<div class="card">
+<h3>📍 Monitorando</h3>
+
+<input id="shipName" placeholder="Nome">
+<input id="shipPort" placeholder="Porto">
+<input id="shipObs" placeholder="Obs">
+
+<button onclick="addShip()">Adicionar</button>
+
+<div id="ships-list"></div>
+</div>
+
+<!-- CONCLUÍDOS -->
+<div class="card">
+<h3>✅ Concluídos</h3>
+<div id="ships-done"></div>
+</div>
+
+</div>
+
+<br>
+
+<div class="card">
+<select id="freq" onchange="setFrequency(this.value)">
+<option value="1">1 min</option>
+<option value="10">10 min</option>
+<option value="15">15 min</option>
+<option value="30">30 min</option>
+<option value="60">1 hora</option>
+<option value="360">6 horas</option>
+<option value="720">12 horas</option>
+<option value="1440">1x ao dia</option>
+</select>
+
+<input type="time" id="fixed-time" value="09:00">
+
+<button onclick="startMonitor()">▶ Iniciar</button>
+<button onclick="stopMonitor()">⏹ Parar</button>
+</div>
+
+</div>
+
+<script src="script.js"></script>
+
+</body>
+</html>
