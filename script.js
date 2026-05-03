@@ -1,10 +1,10 @@
 let ships = JSON.parse(localStorage.getItem("ships")) || [];
 let times = JSON.parse(localStorage.getItem("times")) || [];
-let monitor = null;
+let freq = localStorage.getItem("freq") || 1440;
 
-// 🔒 CONTROLE ANTI-SPAM GLOBAL
+let monitor = null;
 let lastTriggerTime = 0;
-const COOLDOWN = 60000; // 1 minuto
+let COOLDOWN = freq * 60000;
 
 // ---------------- NAVIOS ----------------
 
@@ -23,9 +23,8 @@ function addShip(){
     name,
     port,
     obs,
-    ativo:false,
     concluido:false,
-    lastNotified: 0
+    lastNotified:0
   });
 
   salvarShips();
@@ -42,51 +41,32 @@ function limparInputs(){
 }
 
 function renderShips(){
-  const el = document.getElementById('ships-list');
 
-  if(!ships.length){
-    el.innerHTML = "<div>Nenhum navio cadastrado</div>";
-    return;
-  }
+  const ativos = ships.filter(s => !s.concluido);
+  const concluidos = ships.filter(s => s.concluido);
 
-  el.innerHTML = ships.map(s => `
-    <div class="ship" style="border-left:4px solid ${
-      s.concluido ? '#10b981' : s.ativo ? '#00d4ff' : '#64748b'
-    }">
-
+  document.getElementById('ships-list').innerHTML = ativos.map(s => `
+    <div class="ship">
       <b>${s.name}</b> - ${s.port || ""}
-      <br>
-      <small>${s.obs || ""}</small>
+      <br><small>${s.obs || ""}</small>
 
       <div class="ship-actions">
-        <button onclick="startShip(${s.id})">▶</button>
-        <button onclick="stopShip(${s.id})">⏹</button>
         <button onclick="finishShip(${s.id})">✅</button>
         <button onclick="removeShip(${s.id})">🗑</button>
       </div>
     </div>
-  `).join('');
-}
+  `).join('') || "Nenhum navio";
 
-function startShip(id){
-  let s = ships.find(x=>x.id==id);
-  s.ativo = true;
-  salvarShips();
-  renderShips();
-  log("Monitorando: " + s.name);
-}
-
-function stopShip(id){
-  let s = ships.find(x=>x.id==id);
-  s.ativo = false;
-  salvarShips();
-  renderShips();
-  log("Parado: " + s.name);
+  document.getElementById('ships-done').innerHTML = concluidos.map(s => `
+    <div class="ship" style="opacity:0.6">
+      <b>${s.name}</b> - ${s.port || ""}
+      <br><small>${s.obs || ""}</small>
+    </div>
+  `).join('') || "Nenhum concluído";
 }
 
 function finishShip(id){
   let s = ships.find(x=>x.id==id);
-  s.ativo = false;
   s.concluido = true;
   salvarShips();
   renderShips();
@@ -100,48 +80,13 @@ function removeShip(id){
   log("Navio removido");
 }
 
-// ---------------- HORÁRIOS ----------------
+// ---------------- FREQUÊNCIA ----------------
 
-function addTime(){
-  const t = document.getElementById('alarm-time').value;
-
-  if(!t){
-    alert("Escolha um horário");
-    return;
-  }
-
-  if(times.includes(t)){
-    alert("Horário já existe");
-    return;
-  }
-
-  times.push(t);
-  salvarTimes();
-  renderTimes();
-  log("Horário adicionado: " + t);
-}
-
-function removeTime(t){
-  times = times.filter(x => x !== t);
-  salvarTimes();
-  renderTimes();
-  log("Horário removido: " + t);
-}
-
-function renderTimes(){
-  const el = document.getElementById('time-list');
-
-  if(!times.length){
-    el.innerHTML = "<div>Nenhum horário definido</div>";
-    return;
-  }
-
-  el.innerHTML = times.map(t => `
-    <div>
-      ${t}
-      <button onclick="removeTime('${t}')">❌</button>
-    </div>
-  `).join('');
+function setFrequency(val){
+  freq = parseInt(val);
+  COOLDOWN = freq * 60000;
+  localStorage.setItem("freq", freq);
+  log("Frequência alterada: " + val + " min");
 }
 
 // ---------------- MONITOR ----------------
@@ -155,7 +100,6 @@ function startMonitor(){
   }
 
   monitor = setInterval(checkTimes, 1000);
-
   log("Monitor iniciado");
 }
 
@@ -165,38 +109,31 @@ function stopMonitor(){
   log("Monitor parado");
 }
 
-// ---------------- ANTI-SPAM DEFINITIVO ----------------
+// ---------------- CHECK ----------------
 
 function checkTimes(){
 
   if(!monitor) return;
 
-  const now = new Date();
-  const current = now.toTimeString().slice(0,5);
-  const nowMs = now.getTime();
+  const now = Date.now();
 
-  // 🔒 trava global (1 minuto)
-  if(nowMs - lastTriggerTime < COOLDOWN) return;
+  if(now - lastTriggerTime < COOLDOWN) return;
 
-  if(times.includes(current)){
+  const ativos = ships.filter(s => !s.concluido);
 
-    const ativos = ships.filter(s => s.ativo && !s.concluido);
+  if(ativos.length === 0) return;
 
-    if(ativos.length === 0) return;
+  ativos.forEach(s => notify(s));
 
-    ativos.forEach(s => notify(s));
+  lastTriggerTime = now;
 
-    lastTriggerTime = nowMs;
-
-    log("Alerta disparado: " + current);
-  }
+  log("Disparo executado");
 }
 
 // ---------------- NOTIFICAÇÃO ----------------
 
 function notify(ship){
 
-  // 🔒 trava individual por navio
   if(ship.lastNotified && (Date.now() - ship.lastNotified < COOLDOWN)){
     return;
   }
@@ -252,18 +189,18 @@ function renderLogs(){
   el.innerHTML = logs.reverse().map(l=>`<div>${l}</div>`).join('');
 }
 
+function clearLogs(){
+  localStorage.removeItem("logs");
+  renderLogs();
+}
+
 // ---------------- STORAGE ----------------
 
 function salvarShips(){
   localStorage.setItem("ships", JSON.stringify(ships));
 }
 
-function salvarTimes(){
-  localStorage.setItem("times", JSON.stringify(times));
-}
-
 // ---------------- INIT ----------------
 
 renderShips();
-renderTimes();
 renderLogs();
