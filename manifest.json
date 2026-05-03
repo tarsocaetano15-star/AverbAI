@@ -2,6 +2,5 @@
   "name": "Monitor Navios",
   "short_name": "Navios",
   "start_url": ".",
-  "display": "standalone",
-  "gcm_sender_id": "103953800507"
+  "display": "standalone"
 }
