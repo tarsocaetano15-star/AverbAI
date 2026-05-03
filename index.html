@@ -16,20 +16,40 @@
 
 <h1>🚢 Monitor de Navios</h1>
 
+<!-- FUTUROS -->
 <div class="card">
+<h3>📅 Futuros Monitoramentos</h3>
+
+<input type="text" id="future-name" placeholder="Nome do navio">
+<input type="text" id="future-port" placeholder="Porto">
+<input type="text" id="future-obs" placeholder="Observação">
+<input type="date" id="future-date">
+
+<button onclick="addFutureShip()">+ Agendar</button>
+
+<div id="future-list"></div>
+</div>
+
+<!-- ATIVOS -->
+<div class="card">
+<h3>📍 Em Monitoramento</h3>
+
 <input type="text" id="ship-name" placeholder="Nome do navio">
 <input type="text" id="ship-port" placeholder="Porto">
 <input type="text" id="ship-obs" placeholder="Observação">
 
 <button onclick="addShip()">+ Adicionar Navio</button>
 
-<h3>📍 Em Monitoramento</h3>
 <div id="ships-list"></div>
+</div>
 
+<!-- CONCLUÍDOS -->
+<div class="card">
 <h3>✅ Concluídos</h3>
 <div id="ships-done"></div>
 </div>
 
+<!-- FREQUÊNCIA -->
 <div class="card">
 <h3>🔁 Frequência</h3>
 
@@ -46,11 +66,13 @@
 
 </div>
 
+<!-- MONITOR -->
 <div class="card">
 <button onclick="startMonitor()">▶ Iniciar Monitoramento</button>
 <button onclick="stopMonitor()">⏹ Parar</button>
 </div>
 
+<!-- LOG -->
 <div class="card">
 <h3>📜 Histórico</h3>
 <button onclick="clearLogs()">🧹 Limpar histórico</button>
