@@ -2,35 +2,58 @@ let ships = JSON.parse(localStorage.getItem("ships")) || [];
 let times = JSON.parse(localStorage.getItem("times")) || [];
 let monitor = null;
 
-// CONTROLE DE DISPARO (evita spam)
-let lastTriggerMinute = "";
+// 🔒 CONTROLE ANTI-SPAM GLOBAL
+let lastTriggerTime = 0;
+const COOLDOWN = 60000; // 1 minuto
 
-// -------- NAVIOS --------
+// ---------------- NAVIOS ----------------
 
 function addShip(){
-  const name = document.getElementById('ship-name').value;
-  const port = document.getElementById('ship-port').value;
-  const obs = document.getElementById('ship-obs').value;
+  const name = document.getElementById('ship-name').value.trim();
+  const port = document.getElementById('ship-port').value.trim();
+  const obs = document.getElementById('ship-obs').value.trim();
+
+  if(!name){
+    alert("Digite o nome do navio");
+    return;
+  }
 
   ships.push({
     id: Date.now(),
     name,
     port,
     obs,
-    ativo: false,
-    concluido: false
+    ativo:false,
+    concluido:false,
+    lastNotified: 0
   });
 
   salvarShips();
   renderShips();
+  limparInputs();
+
   log("Navio adicionado: " + name);
+}
+
+function limparInputs(){
+  document.getElementById('ship-name').value = "";
+  document.getElementById('ship-port').value = "";
+  document.getElementById('ship-obs').value = "";
 }
 
 function renderShips(){
   const el = document.getElementById('ships-list');
 
+  if(!ships.length){
+    el.innerHTML = "<div>Nenhum navio cadastrado</div>";
+    return;
+  }
+
   el.innerHTML = ships.map(s => `
-    <div class="ship">
+    <div class="ship" style="border-left:4px solid ${
+      s.concluido ? '#10b981' : s.ativo ? '#00d4ff' : '#64748b'
+    }">
+
       <b>${s.name}</b> - ${s.port || ""}
       <br>
       <small>${s.obs || ""}</small>
@@ -39,6 +62,7 @@ function renderShips(){
         <button onclick="startShip(${s.id})">▶</button>
         <button onclick="stopShip(${s.id})">⏹</button>
         <button onclick="finishShip(${s.id})">✅</button>
+        <button onclick="removeShip(${s.id})">🗑</button>
       </div>
     </div>
   `).join('');
@@ -48,6 +72,7 @@ function startShip(id){
   let s = ships.find(x=>x.id==id);
   s.ativo = true;
   salvarShips();
+  renderShips();
   log("Monitorando: " + s.name);
 }
 
@@ -55,6 +80,7 @@ function stopShip(id){
   let s = ships.find(x=>x.id==id);
   s.ativo = false;
   salvarShips();
+  renderShips();
   log("Parado: " + s.name);
 }
 
@@ -63,28 +89,62 @@ function finishShip(id){
   s.ativo = false;
   s.concluido = true;
   salvarShips();
+  renderShips();
   log("Concluído: " + s.name);
 }
 
-// -------- HORÁRIOS --------
+function removeShip(id){
+  ships = ships.filter(s => s.id !== id);
+  salvarShips();
+  renderShips();
+  log("Navio removido");
+}
+
+// ---------------- HORÁRIOS ----------------
 
 function addTime(){
   const t = document.getElementById('alarm-time').value;
 
-  if(!times.includes(t)){
-    times.push(t);
-    salvarTimes();
-    renderTimes();
-    log("Horário adicionado: " + t);
+  if(!t){
+    alert("Escolha um horário");
+    return;
   }
+
+  if(times.includes(t)){
+    alert("Horário já existe");
+    return;
+  }
+
+  times.push(t);
+  salvarTimes();
+  renderTimes();
+  log("Horário adicionado: " + t);
+}
+
+function removeTime(t){
+  times = times.filter(x => x !== t);
+  salvarTimes();
+  renderTimes();
+  log("Horário removido: " + t);
 }
 
 function renderTimes(){
   const el = document.getElementById('time-list');
-  el.innerHTML = times.map(t => `<div>${t}</div>`).join('');
+
+  if(!times.length){
+    el.innerHTML = "<div>Nenhum horário definido</div>";
+    return;
+  }
+
+  el.innerHTML = times.map(t => `
+    <div>
+      ${t}
+      <button onclick="removeTime('${t}')">❌</button>
+    </div>
+  `).join('');
 }
 
-// -------- MONITOR --------
+// ---------------- MONITOR ----------------
 
 function startMonitor(){
 
@@ -95,6 +155,7 @@ function startMonitor(){
   }
 
   monitor = setInterval(checkTimes, 1000);
+
   log("Monitor iniciado");
 }
 
@@ -104,36 +165,51 @@ function stopMonitor(){
   log("Monitor parado");
 }
 
-// -------- CONTROLE INTELIGENTE (ANTI-SPAM) --------
+// ---------------- ANTI-SPAM DEFINITIVO ----------------
 
 function checkTimes(){
 
-  if(!monitor) return; // PARA INSTANTÂNEO
+  if(!monitor) return;
 
   const now = new Date();
   const current = now.toTimeString().slice(0,5);
+  const nowMs = now.getTime();
 
-  // EVITA REPETIR NO MESMO MINUTO
-  if(current === lastTriggerMinute) return;
+  // 🔒 trava global (1 minuto)
+  if(nowMs - lastTriggerTime < COOLDOWN) return;
 
   if(times.includes(current)){
 
-    ships
-      .filter(s => s.ativo && !s.concluido)
-      .forEach(s => notify(s));
+    const ativos = ships.filter(s => s.ativo && !s.concluido);
 
-    lastTriggerMinute = current;
-    log("Alerta disparado às " + current);
+    if(ativos.length === 0) return;
+
+    ativos.forEach(s => notify(s));
+
+    lastTriggerTime = nowMs;
+
+    log("Alerta disparado: " + current);
   }
 }
 
-// -------- NOTIFICAÇÃO --------
+// ---------------- NOTIFICAÇÃO ----------------
 
 function notify(ship){
 
-  const msg = `${ship.port || ""} ${ship.obs || ""}`;
+  // 🔒 trava individual por navio
+  if(ship.lastNotified && (Date.now() - ship.lastNotified < COOLDOWN)){
+    return;
+  }
 
-  showToast("🚢 "+ship.name, msg);
+  ship.lastNotified = Date.now();
+  salvarShips();
+
+  const msg = `
+Porto: ${ship.port || "-"}
+Obs: ${ship.obs || "-"}
+  `;
+
+  showToast(ship.name, msg);
 
   if(Notification.permission === "granted"){
     new Notification(ship.name, {
@@ -143,7 +219,7 @@ function notify(ship){
   }
 }
 
-// -------- TOAST --------
+// ---------------- TOAST ----------------
 
 function showToast(title,msg){
   const c = document.getElementById('toasts');
@@ -157,7 +233,7 @@ function showToast(title,msg){
   setTimeout(()=>t.remove(),5000);
 }
 
-// -------- LOG --------
+// ---------------- LOG ----------------
 
 function log(msg){
   let logs = JSON.parse(localStorage.getItem("logs")) || [];
@@ -176,7 +252,7 @@ function renderLogs(){
   el.innerHTML = logs.reverse().map(l=>`<div>${l}</div>`).join('');
 }
 
-// -------- STORAGE --------
+// ---------------- STORAGE ----------------
 
 function salvarShips(){
   localStorage.setItem("ships", JSON.stringify(ships));
@@ -186,7 +262,7 @@ function salvarTimes(){
   localStorage.setItem("times", JSON.stringify(times));
 }
 
-// -------- INIT --------
+// ---------------- INIT ----------------
 
 renderShips();
 renderTimes();
