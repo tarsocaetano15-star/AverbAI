@@ -13,11 +13,7 @@
   --card:#111827;
   --border:rgba(255,255,255,0.08);
   --accent:#00d4ff;
-  --green:#10b981;
-  --yellow:#f59e0b;
-  --red:#ef4444;
   --text:#e2e8f0;
-  --muted:#64748b;
 }
 
 body{
@@ -33,50 +29,17 @@ body{
   padding:30px;
 }
 
-/* DASHBOARD */
-.dashboard{
-  display:flex;
-  gap:20px;
-  margin-bottom:20px;
-}
-
-.dash-box{
-  flex:1;
-  background:var(--card);
-  padding:15px;
-  border-radius:12px;
-  border:1px solid var(--border);
-  text-align:center;
-}
-
-/* GRID */
 .grid{
   display:grid;
   grid-template-columns: 1fr 1.3fr 1fr;
   gap:20px;
 }
 
-/* CARDS */
 .card{
   background:var(--card);
   border-radius:16px;
   padding:20px;
   border:1px solid var(--border);
-}
-
-/* NAVIOS */
-.ship{
-  padding:10px;
-  margin-top:10px;
-  border-radius:10px;
-  background:#1a2236;
-  position:relative;
-}
-
-.ship-actions{
-  position:absolute;
-  right:10px;
-  top:10px;
 }
 
 input,button,select{
@@ -89,17 +52,21 @@ input,button,select{
 
 button{
   background:var(--accent);
-  font-weight:bold;
   cursor:pointer;
 }
 
-/* SCROLL CONCLUÍDOS */
+.ship{
+  background:#1a2236;
+  margin-top:10px;
+  padding:10px;
+  border-radius:10px;
+}
+
 #ships-done{
   max-height:300px;
   overflow-y:auto;
 }
 
-/* TOAST */
 #toast-container{
   position:fixed;
   bottom:20px;
@@ -116,13 +83,6 @@ button{
 <div class="wrapper">
 
 <h1>🚢 Monitor de Navios</h1>
-
-<!-- DASHBOARD -->
-<div class="dashboard">
-  <div class="dash-box" id="dash-active">Ativos: 0</div>
-  <div class="dash-box" id="dash-future">Futuros: 0</div>
-  <div class="dash-box" id="dash-done">Concluídos: 0</div>
-</div>
 
 <div class="grid">
 
@@ -163,10 +123,9 @@ button{
 
 <br>
 
-<!-- CONTROLE -->
 <div class="card">
 
-<select onchange="freq=this.value">
+<select id="freq">
 <option value="1">1 min</option>
 <option value="10">10 min</option>
 <option value="15">15 min</option>
