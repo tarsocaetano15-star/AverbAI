@@ -11,47 +11,61 @@
   --accent:#00d4ff; --green:#10b981; --yellow:#f59e0b;
   --red:#ef4444; --text:#e2e8f0; --muted:#64748b;
 }
-body{ margin:0; font-family:'DM Sans',sans-serif; background:var(--bg); color:var(--text); overflow-x: hidden; }
-.wrapper{ max-width:1400px; margin:auto; padding:30px; }
+body{ margin:0; font-family:'DM Sans',sans-serif; background:var(--bg); color:var(--text); overflow: hidden; } /* Trava o scroll da página principal */
+.wrapper{ max-width:1400px; margin:auto; padding:20px; height: 100vh; display: flex; flex-direction: column; }
 
-.dashboard{ display:flex; gap:20px; margin-bottom:20px; }
-.dash-box{ flex:1; background:var(--card); padding:15px; border-radius:12px; border:1px solid var(--border); text-align:center; }
+h1 { font-size: 24px; margin: 10px 0; text-align: center; }
 
-.grid{ display:grid; grid-template-columns: 1fr 1.3fr 1fr; gap:20px; }
-.card{ background:var(--card); border-radius:16px; padding:20px; border:1px solid var(--border); display: flex; flex-direction: column; height: 650px; box-sizing: border-box; }
-.card.center{ transform:scale(1.02); border:1px solid var(--accent); }
+.dashboard{ display:flex; gap:15px; margin-bottom:15px; }
+.dash-box{ flex:1; background:var(--card); padding:10px; border-radius:10px; border:1px solid var(--border); text-align:center; font-size: 14px; }
 
-/* --- BARRA DE SCROLL OBRIGATÓRIA --- */
+.grid{ display:grid; grid-template-columns: 1fr 1.3fr 1fr; gap:15px; flex: 1; min-height: 0; }
+
+/* ALTURA REDUZIDA AQUI */
+.card{ 
+    background:var(--card); 
+    border-radius:16px; 
+    padding:15px; 
+    border:1px solid var(--border); 
+    display: flex; 
+    flex-direction: column; 
+    height: 480px; /* Altura menor para caber na tela */
+    box-sizing: border-box; 
+}
+.card.center{ transform:scale(1.01); border:1px solid var(--accent); }
+
 .list-scroll { 
     flex: 1;
     overflow-y: auto !important; 
-    margin-top: 15px; 
+    margin-top: 10px; 
     padding-right: 5px;
 }
-
-.list-scroll::-webkit-scrollbar { width: 6px; }
+.list-scroll::-webkit-scrollbar { width: 5px; }
 .list-scroll::-webkit-scrollbar-track { background: transparent; }
 .list-scroll::-webkit-scrollbar-thumb { background: var(--muted); border-radius: 10px; }
 
-.ship{ padding:12px; margin-bottom:10px; border-radius:10px; background:#1a2236; position:relative; border: 1px solid var(--border); }
-.ship-actions{ position:absolute; right:10px; top:10px; display: flex; gap: 5px; }
+.ship{ padding:10px; margin-bottom:8px; border-radius:10px; background:#1a2236; position:relative; border: 1px solid var(--border); font-size: 13px; }
+.ship-actions{ position:absolute; right:8px; top:8px; display: flex; gap: 5px; }
 
-.badge{ font-size:11px; padding:3px 6px; border-radius:6px; font-weight: bold; }
+.badge{ font-size:10px; padding:2px 5px; border-radius:5px; font-weight: bold; }
 .badge.green{background:rgba(16,185,129,0.2);color:var(--green);}
 .badge.yellow{background:rgba(245,158,11,0.2);color:var(--yellow);}
 .badge.red{background:rgba(239,68,68,0.2);color:var(--red);}
 
-input,select,button{ width:100%; margin-top:6px; padding:10px; border-radius:8px; border:none; box-sizing: border-box; font-family: inherit; }
+input,select,button{ width:100%; margin-top:4px; padding:8px; border-radius:6px; border:none; box-sizing: border-box; font-family: inherit; font-size: 13px; }
 button{ background:var(--accent); font-weight:bold; cursor:pointer; color: #000; }
 
 .btn-danger { background: var(--red); color: white; }
-.btn-small { width: auto; padding: 4px 10px; font-size: 11px; margin: 0; }
+.btn-small { width: auto; padding: 3px 8px; font-size: 10px; margin: 0; }
 
-.history-list { height: 180px; overflow-y: auto; margin-top: 10px; font-size: 13px; border-top: 1px solid var(--border); }
-.log-entry { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border); padding: 8px 0; }
+/* Histórico mais compacto */
+.history-list { height: 120px; overflow-y: auto; margin-top: 8px; font-size: 12px; border-top: 1px solid var(--border); }
+.log-entry { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border); padding: 5px 0; }
+
+.config-bar { background: var(--card); padding: 12px; border-radius: 12px; margin-top: 15px; border: 1px solid var(--border); }
 
 #toast-container{ position:fixed; bottom:20px; right:20px; z-index:9999; }
-.toast{ background:#1e293b; color:white; padding:15px; border-radius:8px; border-left: 4px solid var(--accent); margin-top:10px; }
+.toast{ background:#1e293b; color:white; padding:12px; border-radius:8px; border-left: 4px solid var(--accent); margin-top:8px; font-size: 13px; }
 </style>
 </head>
 <body>
@@ -66,7 +80,6 @@ button{ background:var(--accent); font-weight:bold; cursor:pointer; color: #000;
 </div>
 
 <div class="grid">
-  <!-- FUTUROS -->
   <div class="card">
     <h3>📅 Futuros</h3>
     <input id="future-name" placeholder="Nome">
@@ -77,18 +90,17 @@ button{ background:var(--accent); font-weight:bold; cursor:pointer; color: #000;
     <div id="future-list" class="list-scroll"></div>
   </div>
 
-  <!-- MONITORANDO -->
   <div class="card center">
     <h3>📍 Monitorando</h3>
     <input id="ship-name" placeholder="Nome">
     <input id="ship-port" placeholder="Porto">
     <input id="ship-obs" placeholder="Obs">
-    <input type="date" id="ship-date-input" title="Data de Inclusão">
+    <small style="margin-top:5px; color:var(--accent); font-size: 11px;">Data do Navio:</small>
+    <input type="date" id="ship-date-input">
     <button onclick="addShip()">Adicionar</button>
     <div id="ships-list" class="list-scroll"></div>
   </div>
 
-  <!-- CONCLUÍDOS -->
   <div class="card">
     <div style="display: flex; justify-content: space-between; align-items: center;">
         <h3>✅ Concluídos</h3>
@@ -96,30 +108,27 @@ button{ background:var(--accent); font-weight:bold; cursor:pointer; color: #000;
     </div>
     <div id="ships-done" class="list-scroll"></div>
   </div>
-
-  <!-- HISTÓRICO -->
-  <div class="card" style="grid-column: span 3; margin-top: 20px; height: auto;">
-    <div style="display: flex; justify-content: space-between; align-items: center;">
-        <h3>📜 Histórico de Atividades</h3>
-        <button class="btn-danger btn-small" onclick="clearFullHistory()">Limpar Histórico</button>
-    </div>
-    <div id="history-list" class="history-list"></div>
-  </div>
 </div>
 
-<div class="card" style="height: auto; margin-top: 20px;">
-  <div style="display: flex; gap: 15px; align-items: flex-end;">
-    <div style="flex: 1;"><small>Frequência:</small>
-      <select id="freq-select" onchange="setFrequency(this.value)">
-        <option value="1">1 min</option><option value="60">1 hora</option><option value="1440" selected>1x ao dia</option>
-      </select>
+<div class="config-bar">
+    <div style="display: flex; gap: 20px; align-items: center;">
+        <div style="flex: 1; display: flex; align-items: center; gap: 10px;">
+            <h3 style="margin:0; font-size: 16px;">📜 Histórico</h3>
+            <button class="btn-danger btn-small" onclick="clearFullHistory()">Limpar</button>
+        </div>
+        <div id="history-list" style="flex: 3; height: 40px; overflow-y: auto; border:none; margin:0;"></div>
+        
+        <div style="flex: 2; display: flex; gap: 10px; align-items: center;">
+            <select id="freq-select" onchange="setFrequency(this.value)" style="width: 80px; margin:0;">
+                <option value="1">1m</option>
+                <option value="60">1h</option>
+                <option value="1440" selected>24h</option>
+            </select>
+            <input type="time" id="fixed-time" value="09:00" style="width: 100px; margin:0;">
+            <button onclick="startMonitor()" style="margin:0;">▶</button>
+            <button style="background: var(--muted); color: #fff; margin:0;" onclick="stopMonitor()">⏹</button>
+        </div>
     </div>
-    <div style="flex: 1;"><small>Hora Fixa:</small><input type="time" id="fixed-time" value="09:00"></div>
-    <div style="flex: 2; display: flex; gap: 10px;">
-      <button onclick="startMonitor()">▶ Iniciar</button>
-      <button style="background: var(--muted); color: #fff;" onclick="stopMonitor()">⏹ Parar</button>
-    </div>
-  </div>
 </div>
 </div>
 <script src="script.js"></script>
