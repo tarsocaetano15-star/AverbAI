@@ -7,7 +7,6 @@ let monitor = null;
 let lastGlobalTrigger = 0;
 let lastFixedTrigger = "";
 
-/* TOAST */
 function showToast(msg){
   const c = document.getElementById("toast-container");
   const t = document.createElement("div");
@@ -17,7 +16,6 @@ function showToast(msg){
   setTimeout(()=>t.remove(),4000);
 }
 
-/* NOTIFICAÇÃO NATIVA */
 function pushNotify(title, body){
   showToast(title);
   if("Notification" in window && Notification.permission==="granted"){
@@ -53,7 +51,7 @@ function renderHistory() {
     }
     container.innerHTML = historyLog.map(h => `
         <div class="log-entry">
-            <span><small style="color:var(--accent)">[${h.time}]</small> ${h.text}</span>
+            <span><small style="color:var(--accent)">[${h.time.split(', ')[1]}]</small> ${h.text}</span>
             <button class="btn-danger btn-small" style="width:auto; padding:2px 6px;" onclick="deleteHistoryItem(${h.id})">✕</button>
         </div>
     `).join('');
@@ -89,7 +87,8 @@ function renderShips(){
 
 function renderFuture(){
   document.getElementById('future-list').innerHTML = futureShips.map(f=> 
-      `<div class="ship"><b>${f.name}</b> - ${f.port}<br><small>Data: ${f.date}</small></div>`
+      `<div class="ship"><b>${f.name}</b> - ${f.port}<br><small>Data: ${f.date}</small>
+       <div class="ship-actions"><button style="background:var(--red)" onclick="removeFuture(${f.id})">🗑</button></div></div>`
   ).join('');
 }
 
@@ -108,6 +107,7 @@ function addShip(){
 
 function addFutureShip(){
   const name = document.getElementById('future-name').value;
+  if(!name) return;
   futureShips.push({ id:Date.now(), name, port:document.getElementById('future-port').value, obs:document.getElementById('future-obs').value, date:document.getElementById('future-date').value });
   addHistory(`Agendado: ${name}`);
   save();
@@ -128,6 +128,11 @@ function removeShip(id){
   let s=ships.find(x=>x.id==id);
   if(s) addHistory(`Removido: ${s.name}`);
   ships=ships.filter(s=>s.id!=id);
+  save();
+}
+
+function removeFuture(id){
+  futureShips=futureShips.filter(f=>f.id!=id);
   save();
 }
 
@@ -175,5 +180,4 @@ function save(){
   renderShips(); renderFuture();
 }
 
-/* INIT */
 renderShips(); renderFuture(); renderHistory();
