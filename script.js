@@ -40,44 +40,20 @@ function calcDplus(date){
   return Math.floor((new Date()-new Date(date))/(1000*60*60*24));
 }
 
-/* RENDER */
-function renderShips(){
-  updateDashboard();
+/* HISTÓRICO */
+function addHistorico(texto){
+  const h = document.getElementById("historico");
+  if(!h) return;
 
-  document.getElementById('ships-list').innerHTML =
-    ships.filter(s=>!s.concluido).map(s=>{
-      const d=calcDplus(s.createdAt);
-      return `
-      <div class="ship">
-        <b>${s.name}</b> - ${s.port}
-        <span class="badge ${d>=6?'red':d>=5?'yellow':'green'}">D+${d}</span>
-        <br><small>${s.obs||""}</small>
-        <div class="ship-actions">
-          <button onclick="finishShip(${s.id})">✔</button>
-          <button onclick="removeShip(${s.id})">🗑</button>
-        </div>
-      </div>`;
-    }).join('');
+  const item = document.createElement("div");
+  item.className = "ship";
 
-  document.getElementById('ships-done').innerHTML =
-    ships.filter(s=>s.concluido).map(s=>`
-      <div class="ship">
-        <b>${s.name}</b>
-        <br><small>${s.obs||""}</small>
-        <br><small>${s.finishedAt}</small>
-      </div>
-    `).join('');
-}
+  item.innerHTML = `
+    ${texto}
+    <button onclick="this.parentElement.remove()">🗑</button>
+  `;
 
-/* FUTUROS */
-function renderFuture(){
-  document.getElementById('future-list').innerHTML =
-    futureShips.map(f=>`
-      <div class="ship">
-        <b>${f.name}</b> - ${f.port}
-        <br><small>${f.date}</small>
-      </div>
-    `).join('');
+  h.prepend(item);
 }
 
 /* ADD */
@@ -94,17 +70,26 @@ function addShip(){
   });
 
   pushNotify("Monitorando "+name, port);
+
+  addHistorico("Navio " + name + " entrou em monitoramento");
+
   save();
 }
 
 function addFutureShip(){
+  const futureName=document.getElementById("future-name").value;
+  const futurePort=document.getElementById("future-port").value;
+  const futureObs=document.getElementById("future-obs").value;
+  const futureDate=document.getElementById("future-date").value;
+
   futureShips.push({
     id:Date.now(),
-    name:futureName.value,
-    port:futurePort.value,
-    obs:futureObs.value,
-    date:futureDate.value
+    name:futureName,
+    port:futurePort,
+    obs:futureObs,
+    date:futureDate
   });
+
   save();
 }
 
@@ -172,7 +157,7 @@ function startMonitor(){
   monitor=setInterval(()=>{
     checkFuture();
     checkTimes();
-    renderShips();
+    updateDashboard();
   },1000);
 
   showToast("Monitoramento iniciado");
@@ -188,11 +173,7 @@ function stopMonitor(){
 function save(){
   localStorage.setItem("ships",JSON.stringify(ships));
   localStorage.setItem("futureShips",JSON.stringify(futureShips));
-  renderShips();
-  renderFuture();
 }
 
 /* INIT */
-renderShips();
-renderFuture();
 updateDashboard();
