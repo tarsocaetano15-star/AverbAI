@@ -7,6 +7,12 @@ let monitor = null;
 let lastGlobalTrigger = 0;
 let lastFixedTrigger = "";
 
+// Configura a data de hoje como padrão no input ao carregar
+window.addEventListener('load', () => {
+    const today = new Date().toISOString().split('T')[0];
+    document.getElementById('ship-date-input').value = today;
+});
+
 function showToast(msg){
   const c = document.getElementById("toast-container");
   const t = document.createElement("div");
@@ -23,7 +29,7 @@ function pushNotify(title, body){
   }
 }
 
-/* --- HISTÓRICO --- */
+/* HISTÓRICO */
 function addHistory(action) {
     const entry = { id: Date.now(), text: action, time: new Date().toLocaleString() };
     historyLog.unshift(entry);
@@ -62,7 +68,7 @@ function saveHistory() {
     renderHistory();
 }
 
-/* --- DASHBOARD E RENDER --- */
+/* DASHBOARD E RENDER */
 function updateDashboard(){
   document.getElementById('dash-active').innerText = "Ativos: " + ships.filter(s=>!s.concluido).length;
   document.getElementById('dash-future').innerText = "Futuros: " + futureShips.length;
@@ -70,27 +76,36 @@ function updateDashboard(){
 }
 
 function calcDplus(date){
-  return Math.floor((new Date()-new Date(date))/(1000*60*60*24));
+  const diff = new Date() - new Date(date);
+  return Math.floor(diff / (1000 * 60 * 60 * 24));
 }
 
-// Função para calcular D+6 a partir de uma data específica
 function calcDplus6(dateStr) {
-    const finishDate = new Date(dateStr);
-    const targetDate = new Date(finishDate);
-    targetDate.setDate(finishDate.getDate() + 6);
-    return targetDate.toLocaleDateString('pt-BR');
+    const d = new Date(dateStr);
+    d.setDate(d.getDate() + 6);
+    return d.toLocaleDateString('pt-BR');
 }
 
 function renderShips(){
   updateDashboard();
   
-  // Monitorando
+  // Lista Monitorando
   document.getElementById('ships-list').innerHTML = ships.filter(s=>!s.concluido).map(s=>{
-      const d=calcDplus(s.createdAt);
-      return `<div class="ship"><b>${s.name}</b> - ${s.port}<span class="badge ${d>=6?'red':d>=5?'yellow':'green'}">D+${d}</span><br><small>${s.obs||""}</small><div class="ship-actions"><button onclick="finishShip(${s.id})">✔</button><button style="background:var(--red)" onclick="removeShip(${s.id})">🗑</button></div></div>`;
+      const d = calcDplus(s.createdAt);
+      return `
+      <div class="ship">
+        <b>${s.name}</b> - ${s.port}
+        <span class="badge ${d>=6?'red':d>=5?'yellow':'green'}">D+${d}</span>
+        <br><small>${s.obs||""}</small>
+        <br><small style="color:var(--yellow); font-size:10px;">📅 LIMITE (D+6): ${calcDplus6(s.createdAt)}</small>
+        <div class="ship-actions">
+          <button onclick="finishShip(${s.id})">✔</button>
+          <button style="background:var(--red)" onclick="removeShip(${s.id})">🗑</button>
+        </div>
+      </div>`;
   }).join('');
 
-  // Concluídos (Com lógica D+6)
+  // Lista Concluídos
   document.getElementById('ships-done').innerHTML = ships.filter(s=>s.concluido).map(s=> 
       `<div class="ship">
         <b>${s.name}</b>
@@ -98,25 +113,38 @@ function renderShips(){
             <button style="background:var(--red)" class="btn-small" onclick="removeShip(${s.id})">🗑</button>
         </div>
         <br><small>${s.obs||""}</small>
-        <br><small style="color:var(--muted)">Concluído em: ${s.finishedAt.split(' ')[0]}</small>
-        <br><b style="color:var(--yellow); font-size: 11px;">PROX. ALERTA (D+6): ${calcDplus6(s.finishedAtDate)}</b>
+        <br><small style="color:var(--green)">Terminado em: ${s.finishedAt}</small>
       </div>`
   ).join('');
 }
 
 function renderFuture(){
   document.getElementById('future-list').innerHTML = futureShips.map(f=> 
-      `<div class="ship"><b>${f.name}</b> - ${f.port}<br><small>Data Alvo: ${f.date}</small>
+      `<div class="ship"><b>${f.name}</b> - ${f.port}<br><small>Alvo: ${f.date}</small>
        <div class="ship-actions"><button style="background:var(--red)" onclick="removeFuture(${f.id})">🗑</button></div></div>`
   ).join('');
 }
 
-/* --- AÇÕES --- */
+/* AÇÕES */
 function addShip(){
-  const name=document.getElementById("ship-name").value;
-  const port=document.getElementById("ship-port").value;
+  const name = document.getElementById("ship-name").value;
+  const port = document.getElementById("ship-port").value;
+  const dateInput = document.getElementById("ship-date-input").value;
+  
   if(!name) return;
-  ships.push({ id:Date.now(), name, port, obs:document.getElementById("ship-obs").value, createdAt:new Date(), concluido:false });
+
+  // Usa a data inserida ou a atual como fallback
+  const creationDate = dateInput ? new Date(dateInput + "T00:00:00") : new Date();
+
+  ships.push({ 
+    id: Date.now(), 
+    name, 
+    port, 
+    obs: document.getElementById("ship-obs").value, 
+    createdAt: creationDate, 
+    concluido: false 
+  });
+
   addHistory(`Monitorando: ${name}`);
   save();
   document.getElementById("ship-name").value = "";
@@ -136,31 +164,28 @@ function addFutureShip(){
 }
 
 function finishShip(id){
-  let s=ships.find(x=>x.id==id);
+  let s = ships.find(x => x.id == id);
   if(s){
-    const now = new Date();
-    s.concluido=true; 
-    s.finishedAt=now.toLocaleString();
-    s.finishedAtDate = now.toISOString(); // Data ISO para cálculo preciso
+    s.concluido = true; 
+    s.finishedAt = new Date().toLocaleString();
     addHistory(`Concluído: ${s.name}`);
     save();
   }
 }
 
 function removeShip(id){
-  ships=ships.filter(s=>s.id!=id);
+  ships = ships.filter(s => s.id != id);
   save();
 }
 
 function removeFuture(id){
-  futureShips=futureShips.filter(f=>f.id!=id);
+  futureShips = futureShips.filter(f => f.id != id);
   save();
 }
 
 function clearAllDone() {
-    if(confirm("Excluir permanentemente todos os concluídos?")) {
+    if(confirm("Deseja apagar todos os concluídos?")) {
         ships = ships.filter(s => !s.concluido);
-        addHistory("Limpeza de concluídos realizada");
         save();
     }
 }
@@ -168,42 +193,42 @@ function clearAllDone() {
 function startMonitor(){
   if(monitor) return;
   if("Notification" in window) Notification.requestPermission();
-  monitor=setInterval(()=>{ checkFuture(); checkTimes(); renderShips(); },1000);
+  monitor = setInterval(() => { checkFuture(); checkTimes(); renderShips(); }, 1000);
   showToast("Iniciado");
 }
 
 function stopMonitor(){
-  clearInterval(monitor); monitor=null;
+  clearInterval(monitor); monitor = null;
   showToast("Parado");
 }
 
 function checkFuture(){
-  const today=new Date().toISOString().split("T")[0];
-  futureShips.forEach(f=>{
-    if(f.date<=today){
-      ships.push({...f,createdAt:new Date(),concluido:false});
+  const today = new Date().toISOString().split("T")[0];
+  futureShips.forEach(f => {
+    if(f.date <= today){
+      ships.push({...f, createdAt: new Date(), concluido: false});
       addHistory(`Auto-Iniciado: ${f.name}`);
     }
   });
-  futureShips=futureShips.filter(f=>f.date>today);
+  futureShips = futureShips.filter(f => f.date > today);
   save();
 }
 
 function checkTimes(){
-  const now=new Date();
+  const now = new Date();
   if(now.getTime() - lastGlobalTrigger >= freq*60000){
     ships.filter(s=>!s.concluido).forEach(s=>pushNotify(s.name, s.port));
-    lastGlobalTrigger=now.getTime();
+    lastGlobalTrigger = now.getTime();
   }
-  if(now.toTimeString().slice(0,5)===document.getElementById("fixed-time").value && lastFixedTrigger!==now.toDateString()){
+  if(now.toTimeString().slice(0,5) === document.getElementById("fixed-time").value && lastFixedTrigger !== now.toDateString()){
     ships.filter(s=>!s.concluido).forEach(s=>pushNotify(s.name, s.port));
-    lastFixedTrigger=now.toDateString();
+    lastFixedTrigger = now.toDateString();
   }
 }
 
 function save(){
-  localStorage.setItem("ships",JSON.stringify(ships));
-  localStorage.setItem("futureShips",JSON.stringify(futureShips));
+  localStorage.setItem("ships", JSON.stringify(ships));
+  localStorage.setItem("futureShips", JSON.stringify(futureShips));
   renderShips(); renderFuture();
 }
 
