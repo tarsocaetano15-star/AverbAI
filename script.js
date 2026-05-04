@@ -23,7 +23,7 @@ function pushNotify(title, body){
   }
 }
 
-/* HISTÓRICO */
+/* --- HISTÓRICO --- */
 function addHistory(action) {
     const entry = { id: Date.now(), text: action, time: new Date().toLocaleString() };
     historyLog.unshift(entry);
@@ -37,7 +37,7 @@ function deleteHistoryItem(id) {
 }
 
 function clearFullHistory() {
-    if(confirm("Deseja apagar todo o histórico de atividades?")) {
+    if(confirm("Deseja apagar todo o histórico?")) {
         historyLog = [];
         saveHistory();
     }
@@ -46,7 +46,7 @@ function clearFullHistory() {
 function renderHistory() {
     const container = document.getElementById('history-list');
     if(historyLog.length === 0) {
-        container.innerHTML = '<small style="color:var(--muted)">Nenhum registro encontrado.</small>';
+        container.innerHTML = '<small style="color:var(--muted)">Vazio</small>';
         return;
     }
     container.innerHTML = historyLog.map(h => `
@@ -62,7 +62,7 @@ function saveHistory() {
     renderHistory();
 }
 
-/* DASHBOARD E RENDER */
+/* --- DASHBOARD E RENDER --- */
 function updateDashboard(){
   document.getElementById('dash-active').innerText = "Ativos: " + ships.filter(s=>!s.concluido).length;
   document.getElementById('dash-future').innerText = "Futuros: " + futureShips.length;
@@ -73,32 +73,51 @@ function calcDplus(date){
   return Math.floor((new Date()-new Date(date))/(1000*60*60*24));
 }
 
+// Função para calcular D+6 a partir de uma data específica
+function calcDplus6(dateStr) {
+    const finishDate = new Date(dateStr);
+    const targetDate = new Date(finishDate);
+    targetDate.setDate(finishDate.getDate() + 6);
+    return targetDate.toLocaleDateString('pt-BR');
+}
+
 function renderShips(){
   updateDashboard();
+  
+  // Monitorando
   document.getElementById('ships-list').innerHTML = ships.filter(s=>!s.concluido).map(s=>{
       const d=calcDplus(s.createdAt);
       return `<div class="ship"><b>${s.name}</b> - ${s.port}<span class="badge ${d>=6?'red':d>=5?'yellow':'green'}">D+${d}</span><br><small>${s.obs||""}</small><div class="ship-actions"><button onclick="finishShip(${s.id})">✔</button><button style="background:var(--red)" onclick="removeShip(${s.id})">🗑</button></div></div>`;
   }).join('');
 
+  // Concluídos (Com lógica D+6)
   document.getElementById('ships-done').innerHTML = ships.filter(s=>s.concluido).map(s=> 
-      `<div class="ship"><b>${s.name}</b><br><small>${s.obs||""}</small><br><small style="color:var(--green)">Concluído: ${s.finishedAt}</small></div>`
+      `<div class="ship">
+        <b>${s.name}</b>
+        <div class="ship-actions">
+            <button style="background:var(--red)" class="btn-small" onclick="removeShip(${s.id})">🗑</button>
+        </div>
+        <br><small>${s.obs||""}</small>
+        <br><small style="color:var(--muted)">Concluído em: ${s.finishedAt.split(' ')[0]}</small>
+        <br><b style="color:var(--yellow); font-size: 11px;">PROX. ALERTA (D+6): ${calcDplus6(s.finishedAtDate)}</b>
+      </div>`
   ).join('');
 }
 
 function renderFuture(){
   document.getElementById('future-list').innerHTML = futureShips.map(f=> 
-      `<div class="ship"><b>${f.name}</b> - ${f.port}<br><small>Data: ${f.date}</small>
+      `<div class="ship"><b>${f.name}</b> - ${f.port}<br><small>Data Alvo: ${f.date}</small>
        <div class="ship-actions"><button style="background:var(--red)" onclick="removeFuture(${f.id})">🗑</button></div></div>`
   ).join('');
 }
 
+/* --- AÇÕES --- */
 function addShip(){
   const name=document.getElementById("ship-name").value;
   const port=document.getElementById("ship-port").value;
   if(!name) return;
   ships.push({ id:Date.now(), name, port, obs:document.getElementById("ship-obs").value, createdAt:new Date(), concluido:false });
   addHistory(`Monitorando: ${name}`);
-  pushNotify("Monitorando "+name, port);
   save();
   document.getElementById("ship-name").value = "";
   document.getElementById("ship-port").value = "";
@@ -107,8 +126,9 @@ function addShip(){
 
 function addFutureShip(){
   const name = document.getElementById('future-name').value;
-  if(!name) return;
-  futureShips.push({ id:Date.now(), name, port:document.getElementById('future-port').value, obs:document.getElementById('future-obs').value, date:document.getElementById('future-date').value });
+  const date = document.getElementById('future-date').value;
+  if(!name || !date) return;
+  futureShips.push({ id:Date.now(), name, port:document.getElementById('future-port').value, obs:document.getElementById('future-obs').value, date:date });
   addHistory(`Agendado: ${name}`);
   save();
   document.getElementById('future-name').value = "";
@@ -118,15 +138,16 @@ function addFutureShip(){
 function finishShip(id){
   let s=ships.find(x=>x.id==id);
   if(s){
-    s.concluido=true; s.finishedAt=new Date().toLocaleString();
+    const now = new Date();
+    s.concluido=true; 
+    s.finishedAt=now.toLocaleString();
+    s.finishedAtDate = now.toISOString(); // Data ISO para cálculo preciso
     addHistory(`Concluído: ${s.name}`);
     save();
   }
 }
 
 function removeShip(id){
-  let s=ships.find(x=>x.id==id);
-  if(s) addHistory(`Removido: ${s.name}`);
   ships=ships.filter(s=>s.id!=id);
   save();
 }
@@ -136,18 +157,24 @@ function removeFuture(id){
   save();
 }
 
+function clearAllDone() {
+    if(confirm("Excluir permanentemente todos os concluídos?")) {
+        ships = ships.filter(s => !s.concluido);
+        addHistory("Limpeza de concluídos realizada");
+        save();
+    }
+}
+
 function startMonitor(){
   if(monitor) return;
   if("Notification" in window) Notification.requestPermission();
   monitor=setInterval(()=>{ checkFuture(); checkTimes(); renderShips(); },1000);
-  showToast("Monitoramento iniciado");
-  addHistory("Sistema Iniciado");
+  showToast("Iniciado");
 }
 
 function stopMonitor(){
   clearInterval(monitor); monitor=null;
-  showToast("Monitoramento parado");
-  addHistory("Sistema Pausado");
+  showToast("Parado");
 }
 
 function checkFuture(){
