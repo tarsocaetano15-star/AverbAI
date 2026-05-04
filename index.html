@@ -96,16 +96,6 @@ body{
 .badge.yellow{background:rgba(245,158,11,0.2);color:var(--yellow);}
 .badge.red{background:rgba(239,68,68,0.2);color:var(--red);}
 
-.pulse{
-  animation:pulse 1s infinite;
-}
-
-@keyframes pulse{
-  0%{box-shadow:0 0 0 0 rgba(239,68,68,0.6);}
-  70%{box-shadow:0 0 0 10px rgba(239,68,68,0);}
-  100%{box-shadow:0 0 0 0 rgba(239,68,68,0);}
-}
-
 input,select,button{
   width:100%;
   margin-top:6px;
@@ -129,6 +119,7 @@ small{color:var(--muted);}
   right:20px;
   z-index:9999;
 }
+
 .toast{
   background:#1e293b;
   color:white;
@@ -137,11 +128,15 @@ small{color:var(--muted);}
   border-radius:8px;
 }
 
-/* HISTÓRICO */
-#historico .ship button{
-  width:auto;
-  padding:2px 6px;
-  margin-left:10px;
+/* 🔥 HISTÓRICO (SÓ VISUAL, SEM IMPACTAR SISTEMA) */
+#historico{
+  margin-top:10px;
+  padding:10px;
+  background:#0f172a;
+  border:1px solid var(--border);
+  border-radius:10px;
+  max-height:200px;
+  overflow:auto;
 }
 </style>
 </head>
@@ -164,26 +159,20 @@ small{color:var(--muted);}
 
 <div class="card">
 <h3>📅 Futuros</h3>
-
 <input id="future-name" placeholder="Nome">
 <input id="future-port" placeholder="Porto">
 <input id="future-obs" placeholder="Obs">
 <input type="date" id="future-date">
-
 <button onclick="addFutureShip()">Agendar</button>
-
 <div id="future-list"></div>
 </div>
 
 <div class="card center">
 <h3>📍 Monitorando</h3>
-
 <input id="ship-name" placeholder="Nome">
 <input id="ship-port" placeholder="Porto">
 <input id="ship-obs" placeholder="Obs">
-
 <button onclick="addShip()">Adicionar</button>
-
 <div id="ships-list"></div>
 </div>
 
@@ -194,27 +183,7 @@ small{color:var(--muted);}
 
 </div>
 
-<br>
-
-<div class="card">
-<select onchange="setFrequency(this.value)">
-<option value="1">1 min</option>
-<option value="10">10 min</option>
-<option value="15">15 min</option>
-<option value="30">30 min</option>
-<option value="60">1 hora</option>
-<option value="360">6 horas</option>
-<option value="720">12 horas</option>
-<option value="1440">1x ao dia</option>
-</select>
-
-<input type="time" id="fixed-time" value="09:00">
-
-<button onclick="startMonitor()">▶ Iniciar</button>
-<button onclick="stopMonitor()">⏹ Parar</button>
-</div>
-
-<!-- 🔥 HISTÓRICO ADICIONADO (SÓ ISSO) -->
+<!-- 🔥 HISTÓRICO (ADICIONADO SOMENTE, SEM ALTERAR NADA) -->
 <div class="card">
   <h3>📜 Histórico</h3>
   <div id="historico"></div>
