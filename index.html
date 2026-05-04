@@ -18,23 +18,20 @@ body{ margin:0; font-family:'DM Sans',sans-serif; background:var(--bg); color:va
 .dash-box{ flex:1; background:var(--card); padding:15px; border-radius:12px; border:1px solid var(--border); text-align:center; }
 
 .grid{ display:grid; grid-template-columns: 1fr 1.3fr 1fr; gap:20px; }
-.card{ background:var(--card); border-radius:16px; padding:20px; border:1px solid var(--border); display: flex; flex-direction: column; height: 650px; position: relative; }
+.card{ background:var(--card); border-radius:16px; padding:20px; border:1px solid var(--border); display: flex; flex-direction: column; height: 650px; box-sizing: border-box; }
 .card.center{ transform:scale(1.02); border:1px solid var(--accent); }
 
-/* --- BARRA DE SCROLL FUNCIONAL --- */
+/* --- BARRA DE SCROLL OBRIGATÓRIA --- */
 .list-scroll { 
-    height: 100%; 
-    overflow-y: scroll !important; 
+    flex: 1;
+    overflow-y: auto !important; 
     margin-top: 15px; 
-    padding-right: 10px;
-    display: block;
+    padding-right: 5px;
 }
 
-/* Customização visual do Scroll */
-.list-scroll::-webkit-scrollbar { width: 8px; }
-.list-scroll::-webkit-scrollbar-track { background: rgba(255,255,255,0.02); border-radius: 10px; }
+.list-scroll::-webkit-scrollbar { width: 6px; }
+.list-scroll::-webkit-scrollbar-track { background: transparent; }
 .list-scroll::-webkit-scrollbar-thumb { background: var(--muted); border-radius: 10px; }
-.list-scroll::-webkit-scrollbar-thumb:hover { background: var(--accent); }
 
 .ship{ padding:12px; margin-bottom:10px; border-radius:10px; background:#1a2236; position:relative; border: 1px solid var(--border); }
 .ship-actions{ position:absolute; right:10px; top:10px; display: flex; gap: 5px; }
@@ -50,7 +47,7 @@ button{ background:var(--accent); font-weight:bold; cursor:pointer; color: #000;
 .btn-danger { background: var(--red); color: white; }
 .btn-small { width: auto; padding: 4px 10px; font-size: 11px; margin: 0; }
 
-.history-list { height: 200px; overflow-y: auto; margin-top: 10px; font-size: 13px; border-top: 1px solid var(--border); }
+.history-list { height: 180px; overflow-y: auto; margin-top: 10px; font-size: 13px; border-top: 1px solid var(--border); }
 .log-entry { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border); padding: 8px 0; }
 
 #toast-container{ position:fixed; bottom:20px; right:20px; z-index:9999; }
@@ -86,6 +83,7 @@ button{ background:var(--accent); font-weight:bold; cursor:pointer; color: #000;
     <input id="ship-name" placeholder="Nome">
     <input id="ship-port" placeholder="Porto">
     <input id="ship-obs" placeholder="Obs">
+    <input type="date" id="ship-date-input" title="Data de Inclusão">
     <button onclick="addShip()">Adicionar</button>
     <div id="ships-list" class="list-scroll"></div>
   </div>
