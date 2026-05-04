@@ -25,7 +25,7 @@ function pushNotify(title, body){
   }
 }
 
-/* --- ADIÇÃO: LÓGICA DE HISTÓRICO --- */
+/* HISTÓRICO */
 function addHistory(action) {
     const entry = { id: Date.now(), text: action, time: new Date().toLocaleString() };
     historyLog.unshift(entry);
@@ -64,7 +64,7 @@ function saveHistory() {
     renderHistory();
 }
 
-/* --- LÓGICA ORIGINAL MANTIDA --- */
+/* DASHBOARD E RENDER */
 function updateDashboard(){
   document.getElementById('dash-active').innerText = "Ativos: " + ships.filter(s=>!s.concluido).length;
   document.getElementById('dash-future').innerText = "Futuros: " + futureShips.length;
@@ -98,30 +98,35 @@ function addShip(){
   const port=document.getElementById("ship-port").value;
   if(!name) return;
   ships.push({ id:Date.now(), name, port, obs:document.getElementById("ship-obs").value, createdAt:new Date(), concluido:false });
-  addHistory(`Monitorando: ${name}`); // Registro no histórico
+  addHistory(`Monitorando: ${name}`);
   pushNotify("Monitorando "+name, port);
   save();
+  document.getElementById("ship-name").value = "";
+  document.getElementById("ship-port").value = "";
+  document.getElementById("ship-obs").value = "";
 }
 
 function addFutureShip(){
   const name = document.getElementById('future-name').value;
   futureShips.push({ id:Date.now(), name, port:document.getElementById('future-port').value, obs:document.getElementById('future-obs').value, date:document.getElementById('future-date').value });
-  addHistory(`Agendado: ${name}`); // Registro no histórico
+  addHistory(`Agendado: ${name}`);
   save();
+  document.getElementById('future-name').value = "";
+  document.getElementById('future-date').value = "";
 }
 
 function finishShip(id){
   let s=ships.find(x=>x.id==id);
   if(s){
     s.concluido=true; s.finishedAt=new Date().toLocaleString();
-    addHistory(`Concluído: ${s.name}`); // Registro no histórico
+    addHistory(`Concluído: ${s.name}`);
     save();
   }
 }
 
 function removeShip(id){
   let s=ships.find(x=>x.id==id);
-  if(s) addHistory(`Removido: ${s.name}`); // Registro no histórico
+  if(s) addHistory(`Removido: ${s.name}`);
   ships=ships.filter(s=>s.id!=id);
   save();
 }
@@ -131,13 +136,13 @@ function startMonitor(){
   if("Notification" in window) Notification.requestPermission();
   monitor=setInterval(()=>{ checkFuture(); checkTimes(); renderShips(); },1000);
   showToast("Monitoramento iniciado");
-  addHistory("Sistema Iniciado"); // Registro no histórico
+  addHistory("Sistema Iniciado");
 }
 
 function stopMonitor(){
   clearInterval(monitor); monitor=null;
   showToast("Monitoramento parado");
-  addHistory("Sistema Pausado"); // Registro no histórico
+  addHistory("Sistema Pausado");
 }
 
 function checkFuture(){
