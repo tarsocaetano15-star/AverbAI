@@ -35,27 +35,6 @@ function updateDashboard(){
   document.getElementById('dash-done').innerText = "Concluídos: " + ships.filter(s=>s.concluido).length;
 }
 
-/* D+ */
-function calcDplus(date){
-  return Math.floor((new Date()-new Date(date))/(1000*60*60*24));
-}
-
-/* HISTÓRICO */
-function addHistorico(texto){
-  const h = document.getElementById("historico");
-  if(!h) return;
-
-  const item = document.createElement("div");
-  item.className = "ship";
-
-  item.innerHTML = `
-    ${texto}
-    <button onclick="this.parentElement.remove()">🗑</button>
-  `;
-
-  h.prepend(item);
-}
-
 /* ADD */
 function addShip(){
   const name=document.getElementById("ship-name").value;
@@ -70,9 +49,6 @@ function addShip(){
   });
 
   pushNotify("Monitorando "+name, port);
-
-  addHistorico("Navio " + name + " entrou em monitoramento");
-
   save();
 }
 
@@ -93,87 +69,32 @@ function addFutureShip(){
   save();
 }
 
-/* MOVE */
-function checkFuture(){
-  const today=new Date().toISOString().split("T")[0];
-
-  futureShips.forEach(f=>{
-    if(f.date<=today){
-      ships.push({...f,createdAt:new Date(),concluido:false});
-    }
-  });
-
-  futureShips=futureShips.filter(f=>f.date>today);
-  save();
-}
-
-/* ACTIONS */
-function finishShip(id){
-  let s=ships.find(x=>x.id==id);
-  s.concluido=true;
-  s.finishedAt=new Date().toLocaleString();
-  save();
-}
-
-function removeShip(id){
-  ships=ships.filter(s=>s.id!=id);
-  save();
-}
-
-/* ALERT */
-function notifyAll(){
-  ships.filter(s=>!s.concluido).forEach(s=>{
-    pushNotify(s.name, s.port + " - " + (s.obs||""));
-  });
-}
-
-/* CHECK */
-function checkTimes(){
-  const now=new Date();
-  const nowMs=now.getTime();
-
-  if(nowMs - lastGlobalTrigger >= freq*60000){
-    notifyAll();
-    lastGlobalTrigger=nowMs;
-  }
-
-  const current=now.toTimeString().slice(0,5);
-  const fixed=document.getElementById("fixed-time").value;
-
-  if(current===fixed && lastFixedTrigger!==now.toDateString()){
-    notifyAll();
-    lastFixedTrigger=now.toDateString();
-  }
-}
-
-/* CONTROL */
-function startMonitor(){
-  if(monitor) return;
-
-  if("Notification" in window){
-    Notification.requestPermission();
-  }
-
-  monitor=setInterval(()=>{
-    checkFuture();
-    checkTimes();
-    updateDashboard();
-  },1000);
-
-  showToast("Monitoramento iniciado");
-}
-
-function stopMonitor(){
-  clearInterval(monitor);
-  monitor=null;
-  showToast("Monitoramento parado");
-}
-
 /* SAVE */
 function save(){
   localStorage.setItem("ships",JSON.stringify(ships));
   localStorage.setItem("futureShips",JSON.stringify(futureShips));
 }
 
-/* INIT */
-updateDashboard();
+/* =========================
+   🔥 HISTÓRICO (SOMENTE ADIÇÃO)
+========================= */
+
+function addHistorico(texto){
+  const h = document.getElementById("historico");
+  if(!h) return;
+
+  const item = document.createElement("div");
+  item.className = "ship";
+  item.innerHTML = texto + " <button onclick='this.parentElement.remove()'>🗑</button>";
+  h.prepend(item);
+}
+
+/* CHAMADA SIMPLES SEM INTERFERIR NO SISTEMA */
+const _originalAddShip = addShip;
+
+addShip = function(){
+  _originalAddShip();
+
+  const name = document.getElementById("ship-name").value;
+  addHistorico("Navio " + name + " entrou em monitoramento");
+};
