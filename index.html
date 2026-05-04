@@ -136,6 +136,13 @@ small{color:var(--muted);}
   margin-top:10px;
   border-radius:8px;
 }
+
+/* HISTÓRICO */
+#historico .ship button{
+  width:auto;
+  padding:2px 6px;
+  margin-left:10px;
+}
 </style>
 </head>
 
@@ -205,6 +212,12 @@ small{color:var(--muted);}
 
 <button onclick="startMonitor()">▶ Iniciar</button>
 <button onclick="stopMonitor()">⏹ Parar</button>
+</div>
+
+<!-- 🔥 HISTÓRICO ADICIONADO (SÓ ISSO) -->
+<div class="card">
+  <h3>📜 Histórico</h3>
+  <div id="historico"></div>
 </div>
 
 </div>
