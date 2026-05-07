@@ -1,7 +1,7 @@
 let ships = JSON.parse(localStorage.getItem("ships")) || [];
 let futureShips = JSON.parse(localStorage.getItem("futureShips")) || [];
 let historyLog = JSON.parse(localStorage.getItem("historyLog")) || [];
-let isMonitoring = localStorage.getItem("isMonitoring") === "true"; // Novo: Recupera estado do alarme
+let isMonitoring = localStorage.getItem("isMonitoring") === "true";
 
 let freq = 1440;
 let monitor = null;
@@ -9,6 +9,7 @@ let lastGlobalTrigger = 0;
 let lastFixedTrigger = "";
 
 window.onload = () => {
+    // Configura data atual
     const today = new Date().toISOString().split('T')[0];
     document.getElementById('ship-date-input').value = today;
     
@@ -16,29 +17,35 @@ window.onload = () => {
     renderFuture(); 
     renderHistory();
 
-    // AUTO-INÍCIO: Se estava monitorando antes de fechar, volta a monitorar
+    // AUTO-INÍCIO
     if (isMonitoring) {
         startMonitor(true);
     }
 };
 
+/* --- ALERTA VISUAL (TOAST) --- */
 function showToast(msg){
   const c = document.getElementById("toast-container");
+  if(!c) return; // Evita erro se o elemento não existir
   const t = document.createElement("div");
   t.className="toast";
-  t.innerText = msg;
+  t.innerHTML = `<b>🚢 Aviso:</b> ${msg}`;
   c.appendChild(t);
-  setTimeout(()=>t.remove(),4000);
+  setTimeout(()=>t.remove(), 6000); // Toast fica por 6 segundos
 }
 
+/* --- ALERTA NATIVO (POP-UP) --- */
 function pushNotify(title, body){
-  showToast(title);
-  if("Notification" in window && Notification.permission==="granted"){
-      new Notification(title,{body});
+  showToast(title + ": " + body); // Mostra o toast sempre
+
+  if("Notification" in window){
+    if(Notification.permission === "granted"){
+      new Notification(title, { body: body, icon: "https://cdn-icons-png.flaticon.com/512/2040/2040061.png" });
+    }
   }
 }
 
-/* HISTÓRICO */
+/* --- HISTÓRICO --- */
 function addHistory(action) {
     const entry = { id: Date.now(), text: action, time: new Date().toLocaleString() };
     historyLog.unshift(entry);
@@ -60,6 +67,7 @@ function clearFullHistory() {
 
 function renderHistory() {
     const container = document.getElementById('history-list');
+    if(!container) return;
     if(historyLog.length === 0) {
         container.innerHTML = '<small style="color:var(--muted)">Vazio</small>';
         return;
@@ -67,7 +75,7 @@ function renderHistory() {
     container.innerHTML = historyLog.map(h => `
         <div class="log-entry">
             <span><small style="color:var(--accent)">[${h.time.split(', ')[1]}]</small> ${h.text}</span>
-            <button class="btn-danger btn-small" style="width:auto; padding:2px 6px;" onclick="deleteHistoryItem(${h.id})">✕</button>
+            <button class="btn-danger btn-small" onclick="deleteHistoryItem(${h.id})">✕</button>
         </div>
     `).join('');
 }
@@ -77,7 +85,7 @@ function saveHistory() {
     renderHistory();
 }
 
-/* DASHBOARD E RENDER */
+/* --- DASHBOARD E RENDER --- */
 function updateDashboard(){
   document.getElementById('dash-active').innerText = "Ativos: " + ships.filter(s=>!s.concluido).length;
   document.getElementById('dash-future').innerText = "Futuros: " + futureShips.length;
@@ -132,27 +140,28 @@ function renderFuture(){
   ).join('');
 }
 
-/* AÇÕES */
+/* --- AÇÕES --- */
 function addShip(){
-  const name = document.getElementById("ship-name").value;
-  const port = document.getElementById("ship-port").value;
-  const rawDate = document.getElementById("ship-date-input").value;
-  if(!name || !rawDate) return alert("Preencha Nome e Data!");
+  const nameInput = document.getElementById("ship-name");
+  const portInput = document.getElementById("ship-port");
+  const obsInput = document.getElementById("ship-obs");
+  const dateInput = document.getElementById("ship-date-input");
+
+  if(!nameInput.value || !dateInput.value) return alert("Preencha Nome e Data!");
 
   ships.push({ 
     id: Date.now(), 
-    name, port, 
-    obs: document.getElementById("ship-obs").value, 
-    createdAt: new Date(rawDate + "T00:00:00"), 
-    rawDate: rawDate,
+    name: nameInput.value, 
+    port: portInput.value, 
+    obs: obsInput.value, 
+    createdAt: new Date(dateInput.value + "T00:00:00"), 
+    rawDate: dateInput.value,
     concluido: false 
   });
 
-  addHistory(`Monitorando: ${name}`);
+  addHistory(`Monitorando: ${nameInput.value}`);
   save();
-  document.getElementById("ship-name").value = "";
-  document.getElementById("ship-port").value = "";
-  document.getElementById("ship-obs").value = "";
+  nameInput.value = ""; portInput.value = ""; obsInput.value = "";
 }
 
 function addFutureShip(){
@@ -193,10 +202,15 @@ function clearAllDone() {
     }
 }
 
-/* CONTROLE DO MONITORAMENTO COM PERSISTÊNCIA */
+/* --- CONTROLE DO MONITORAMENTO --- */
 function startMonitor(isAuto = false){
   if(monitor) return;
-  if("Notification" in window) Notification.requestPermission();
+  
+  if("Notification" in window){
+      Notification.requestPermission().then(permission => {
+          if(permission === "granted" && !isAuto) showToast("Notificações Autorizadas!");
+      });
+  }
   
   monitor = setInterval(() => { 
       checkFuture(); 
@@ -207,12 +221,14 @@ function startMonitor(isAuto = false){
   localStorage.setItem("isMonitoring", "true");
   
   const btn = document.getElementById("btn-master-start");
-  btn.innerHTML = "🟢 MONITORANDO...";
-  btn.style.background = "#10b981";
+  if(btn){
+      btn.innerHTML = "🟢 MONITORANDO...";
+      btn.style.background = "#10b981";
+  }
 
   if(!isAuto) {
-      showToast("Monitoramento Iniciado e Salvo");
-      addHistory("Sistema de Monitoramento Iniciado");
+      showToast("Monitoramento Iniciado e Ativo!");
+      addHistory("Sistema Iniciado");
   }
 }
 
@@ -222,38 +238,46 @@ function stopMonitor(){
   localStorage.setItem("isMonitoring", "false");
   
   const btn = document.getElementById("btn-master-start");
-  btn.innerHTML = "▶ Iniciar";
-  btn.style.background = "var(--accent)";
+  if(btn){
+      btn.innerHTML = "▶ Iniciar";
+      btn.style.background = "var(--accent)";
+  }
   
-  showToast("Monitoramento Parado");
-  addHistory("Sistema de Monitoramento Pausado");
+  showToast("Monitoramento Pausado.");
+  addHistory("Sistema Pausado");
 }
 
 function checkFuture(){
-  const today=new Date().toISOString().split("T")[0];
-  futureShips.forEach(f=>{
-    if(f.date<=today){
+  const today = new Date().toISOString().split("T")[0];
+  futureShips.forEach(f => {
+    if(f.date <= today){
       ships.push({...f, createdAt: new Date(f.date + "T00:00:00"), rawDate: f.date, concluido: false});
       addHistory(`Auto-Iniciado: ${f.name}`);
     }
   });
-  futureShips=futureShips.filter(f=>f.date>today);
+  futureShips = futureShips.filter(f => f.date > today);
   save();
 }
 
 function setFrequency(val) {
     freq = parseInt(val);
-    showToast(`Frequência ajustada para ${val} min`);
+    showToast(`Intervalo de alerta: ${val} min`);
 }
 
 function checkTimes(){
   const now = new Date();
+  // Alerta por frequência
   if(now.getTime() - lastGlobalTrigger >= freq*60000){
-    ships.filter(s=>!s.concluido).forEach(s=>pushNotify(s.name, s.port));
+    const active = ships.filter(s=>!s.concluido);
+    if(active.length > 0) pushNotify("Monitoramento Ativo", `${active.length} navios em aberto.`);
     lastGlobalTrigger = now.getTime();
   }
-  if(now.toTimeString().slice(0,5) === document.getElementById("fixed-time").value && lastFixedTrigger !== now.toDateString()){
-    ships.filter(s=>!s.concluido).forEach(s=>pushNotify(s.name, s.port));
+  // Alerta fixo
+  const currentHour = now.toTimeString().slice(0,5);
+  const fixedHour = document.getElementById("fixed-time").value;
+  if(currentHour === fixedHour && lastFixedTrigger !== now.toDateString()){
+    const active = ships.filter(s=>!s.concluido);
+    if(active.length > 0) pushNotify("ALERTA DIÁRIO", `Existem ${active.length} navios ativos para revisão.`);
     lastFixedTrigger = now.toDateString();
   }
 }
