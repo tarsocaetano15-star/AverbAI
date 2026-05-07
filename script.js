@@ -1,17 +1,26 @@
 let ships = JSON.parse(localStorage.getItem("ships")) || [];
 let futureShips = JSON.parse(localStorage.getItem("futureShips")) || [];
 let historyLog = JSON.parse(localStorage.getItem("historyLog")) || [];
+let isMonitoring = localStorage.getItem("isMonitoring") === "true"; // Novo: Recupera estado do alarme
 
 let freq = 1440;
 let monitor = null;
 let lastGlobalTrigger = 0;
 let lastFixedTrigger = "";
 
-// Configura a data de hoje como padrão no input ao carregar
-window.addEventListener('load', () => {
+window.onload = () => {
     const today = new Date().toISOString().split('T')[0];
     document.getElementById('ship-date-input').value = today;
-});
+    
+    renderShips(); 
+    renderFuture(); 
+    renderHistory();
+
+    // AUTO-INÍCIO: Se estava monitorando antes de fechar, volta a monitorar
+    if (isMonitoring) {
+        startMonitor(true);
+    }
+};
 
 function showToast(msg){
   const c = document.getElementById("toast-container");
@@ -81,7 +90,7 @@ function calcDplus(date){
 }
 
 function calcDplus6(dateStr) {
-    const d = new Date(dateStr);
+    const d = new Date(dateStr + "T00:00:00");
     d.setDate(d.getDate() + 6);
     return d.toLocaleDateString('pt-BR');
 }
@@ -89,7 +98,6 @@ function calcDplus6(dateStr) {
 function renderShips(){
   updateDashboard();
   
-  // Lista Monitorando
   document.getElementById('ships-list').innerHTML = ships.filter(s=>!s.concluido).map(s=>{
       const d = calcDplus(s.createdAt);
       return `
@@ -97,7 +105,7 @@ function renderShips(){
         <b>${s.name}</b> - ${s.port}
         <span class="badge ${d>=6?'red':d>=5?'yellow':'green'}">D+${d}</span>
         <br><small>${s.obs||""}</small>
-        <br><small style="color:var(--yellow); font-size:10px;">📅 LIMITE (D+6): ${calcDplus6(s.createdAt)}</small>
+        <br><small style="color:var(--yellow); font-size:10px;">📅 LIMITE (D+6): ${calcDplus6(s.rawDate)}</small>
         <div class="ship-actions">
           <button onclick="finishShip(${s.id})">✔</button>
           <button style="background:var(--red)" onclick="removeShip(${s.id})">🗑</button>
@@ -105,7 +113,6 @@ function renderShips(){
       </div>`;
   }).join('');
 
-  // Lista Concluídos
   document.getElementById('ships-done').innerHTML = ships.filter(s=>s.concluido).map(s=> 
       `<div class="ship">
         <b>${s.name}</b>
@@ -113,7 +120,7 @@ function renderShips(){
             <button style="background:var(--red)" class="btn-small" onclick="removeShip(${s.id})">🗑</button>
         </div>
         <br><small>${s.obs||""}</small>
-        <br><small style="color:var(--green)">Terminado em: ${s.finishedAt}</small>
+        <br><small style="color:var(--green)">Concluído em: ${s.finishedAt}</small>
       </div>`
   ).join('');
 }
@@ -129,19 +136,15 @@ function renderFuture(){
 function addShip(){
   const name = document.getElementById("ship-name").value;
   const port = document.getElementById("ship-port").value;
-  const dateInput = document.getElementById("ship-date-input").value;
-  
-  if(!name) return;
-
-  // Usa a data inserida ou a atual como fallback
-  const creationDate = dateInput ? new Date(dateInput + "T00:00:00") : new Date();
+  const rawDate = document.getElementById("ship-date-input").value;
+  if(!name || !rawDate) return alert("Preencha Nome e Data!");
 
   ships.push({ 
     id: Date.now(), 
-    name, 
-    port, 
+    name, port, 
     obs: document.getElementById("ship-obs").value, 
-    createdAt: creationDate, 
+    createdAt: new Date(rawDate + "T00:00:00"), 
+    rawDate: rawDate,
     concluido: false 
   });
 
@@ -155,7 +158,7 @@ function addShip(){
 function addFutureShip(){
   const name = document.getElementById('future-name').value;
   const date = document.getElementById('future-date').value;
-  if(!name || !date) return;
+  if(!name || !date) return alert("Preencha Nome e Data!");
   futureShips.push({ id:Date.now(), name, port:document.getElementById('future-port').value, obs:document.getElementById('future-obs').value, date:date });
   addHistory(`Agendado: ${name}`);
   save();
@@ -184,34 +187,63 @@ function removeFuture(id){
 }
 
 function clearAllDone() {
-    if(confirm("Deseja apagar todos os concluídos?")) {
+    if(confirm("Apagar todos os concluídos?")) {
         ships = ships.filter(s => !s.concluido);
         save();
     }
 }
 
-function startMonitor(){
+/* CONTROLE DO MONITORAMENTO COM PERSISTÊNCIA */
+function startMonitor(isAuto = false){
   if(monitor) return;
   if("Notification" in window) Notification.requestPermission();
-  monitor = setInterval(() => { checkFuture(); checkTimes(); renderShips(); }, 1000);
-  showToast("Iniciado");
+  
+  monitor = setInterval(() => { 
+      checkFuture(); 
+      checkTimes(); 
+      renderShips(); 
+  }, 1000);
+  
+  localStorage.setItem("isMonitoring", "true");
+  
+  const btn = document.getElementById("btn-master-start");
+  btn.innerHTML = "🟢 MONITORANDO...";
+  btn.style.background = "#10b981";
+
+  if(!isAuto) {
+      showToast("Monitoramento Iniciado e Salvo");
+      addHistory("Sistema de Monitoramento Iniciado");
+  }
 }
 
 function stopMonitor(){
-  clearInterval(monitor); monitor = null;
-  showToast("Parado");
+  clearInterval(monitor); 
+  monitor = null;
+  localStorage.setItem("isMonitoring", "false");
+  
+  const btn = document.getElementById("btn-master-start");
+  btn.innerHTML = "▶ Iniciar";
+  btn.style.background = "var(--accent)";
+  
+  showToast("Monitoramento Parado");
+  addHistory("Sistema de Monitoramento Pausado");
 }
 
 function checkFuture(){
-  const today = new Date().toISOString().split("T")[0];
-  futureShips.forEach(f => {
-    if(f.date <= today){
-      ships.push({...f, createdAt: new Date(), concluido: false});
+  const today=new Date().toISOString().split("T")[0];
+  futureShips.forEach(f=>{
+    if(f.date<=today){
+      ships.push({...f, createdAt: new Date(f.date + "T00:00:00"), rawDate: f.date, concluido: false});
       addHistory(`Auto-Iniciado: ${f.name}`);
     }
   });
-  futureShips = futureShips.filter(f => f.date > today);
+  futureShips=futureShips.filter(f=>f.date>today);
   save();
+}
+
+function setFrequency(val) {
+    freq = parseInt(val);
+    showToast(`Frequência ajustada para ${val} min`);
 }
 
 function checkTimes(){
@@ -231,5 +263,3 @@ function save(){
   localStorage.setItem("futureShips", JSON.stringify(futureShips));
   renderShips(); renderFuture();
 }
-
-renderShips(); renderFuture(); renderHistory();
