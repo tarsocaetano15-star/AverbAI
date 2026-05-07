@@ -40,7 +40,8 @@ body{ margin:0; font-family:'DM Sans',sans-serif; background:var(--bg); color:va
 .badge.red{background:rgba(239,68,68,0.2);color:var(--red);}
 
 input,select,button{ width:100%; margin-top:6px; padding:10px; border-radius:8px; border:none; box-sizing: border-box; font-family: inherit; }
-button{ background:var(--accent); font-weight:bold; cursor:pointer; color: #000; }
+button{ background:var(--accent); font-weight:bold; cursor:pointer; color: #000; transition: 0.2s; }
+button:hover{ opacity: 0.8; }
 
 .btn-danger { background: var(--red); color: white; }
 .btn-small { width: auto; padding: 4px 10px; font-size: 11px; margin: 0; }
@@ -48,14 +49,22 @@ button{ background:var(--accent); font-weight:bold; cursor:pointer; color: #000;
 .history-list { height: 180px; overflow-y: auto; margin-top: 10px; font-size: 13px; border-top: 1px solid var(--border); }
 .log-entry { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border); padding: 8px 0; }
 
-#toast-container{ position:fixed; bottom:20px; right:20px; z-index:9999; }
-.toast{ background:#1e293b; color:white; padding:15px; border-radius:8px; border-left: 4px solid var(--accent); margin-top:10px; }
+/* CONTAINER DO TOAST */
+#toast-container{ position:fixed; bottom:20px; right:20px; z-index:9999; pointer-events: none; }
+.toast{ 
+    background:#1e293b; color:white; padding:15px; border-radius:8px; 
+    border-left: 4px solid var(--accent); margin-top:10px; 
+    box-shadow: 0 4px 12px rgba(0,0,0,0.4);
+    pointer-events: auto;
+    animation: slideIn 0.3s ease-out;
+}
+@keyframes slideIn { from { transform: translateX(100%); } to { transform: translateX(0); } }
 </style>
 </head>
 <body>
 <div id="toast-container"></div>
 <div class="wrapper">
-<h1>🚢 Monitor de Navios</h1>
+<h1>🚢 Monitor de Navios PRO</h1>
 
 <div class="dashboard">
   <div class="dash-box" id="dash-future">Futuros: 0</div>
